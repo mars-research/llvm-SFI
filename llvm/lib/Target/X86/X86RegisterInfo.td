@@ -425,13 +425,23 @@ def GRH16 : RegisterClass<"X86", [i16], 16,
 
 def GR32 : RegisterClass<"X86", [i32], 32,
                          (add EAX, ECX, EDX, ESI, EDI, EBX, EBP, ESP,
-                              R8D, R9D, R10D, R11D, R14D, R15D, R12D, R13D)>;
+                              R8D, R9D, R10D, R11D, R14D, R12D, R13D)>;
 
 // GR64 - 64-bit GPRs. This oddly includes RIP, which isn't accurate, since
 // RIP isn't really a register and it can't be used anywhere except in an
 // address, but it doesn't cause trouble.
 // FIXME: it *does* cause trouble - CheckBaseRegAndIndexReg() has extra
 // tests because of the inclusion of RIP in this register class.
+
+let isAllocatable = 0 in
+def GR32R : RegisterClass<"X86", [i32], 32,
+                        (add R15D, R14, R13)>;
+
+let isAllocatable = 0 in
+def GR64R : RegisterClass<"X86", [i64], 64,
+                        (add R15 )>;
+
+
 def GR64 : RegisterClass<"X86", [i64], 64,
                          (add RAX, RCX, RDX, RSI, RDI, R8, R9, R10, R11,
                               RBX, R14, R15, R12, R13, RBP, RSP, RIP)>;
