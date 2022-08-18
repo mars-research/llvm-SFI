@@ -433,15 +433,6 @@ def GR32 : RegisterClass<"X86", [i32], 32,
 // FIXME: it *does* cause trouble - CheckBaseRegAndIndexReg() has extra
 // tests because of the inclusion of RIP in this register class.
 
-let isAllocatable = 0 in
-def GR32R : RegisterClass<"X86", [i32], 32,
-                        (add R15D, R14, R13)>;
-
-let isAllocatable = 0 in
-def GR64R : RegisterClass<"X86", [i64], 64,
-                        (add R15 )>;
-
-
 def GR64 : RegisterClass<"X86", [i64], 64,
                          (add RAX, RCX, RDX, RSI, RDI, R8, R9, R10, R11,
                               RBX, R14, R15, R12, R13, RBP, RSP, RIP)>;
