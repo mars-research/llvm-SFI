@@ -9101,9 +9101,23 @@ void X86InstrInfo::buildOutlinedFrame(MachineBasicBlock &MBB,
     return;
 
   // We're a normal call, so our sequence doesn't have a return instruction.
-  // Add it in.
+  // Add it in. 
+  // MachineInstr *test=  BuildMI(MF, DebugLoc(), get(X86::MOV64rr)).addReg(X86::RSP).addReg(X86::RBP);
+  // MBB.insert(MBB.end(), test);
+  // MachineInstr *test1= BuildMI(MF, DebugLoc(),
+  //                          get(X86::MOV64rm), X86::RBP);
+  // // addRegOffset(*test1,
+  // //                  X86::RBP, false, 0);
+  // MBB.insert(MBB.end(), test1);
+  MachineInstr *pop=  BuildMI(MF, DebugLoc(), get(X86::POP64r)).addReg(X86::R8, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+  MBB.insert(MBB.end(), pop);
+  MachineInstr *jmp=  BuildMI(MF, DebugLoc(), get(X86::MOV64rr)).addReg(X86::R8, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+  MBB.insert(MBB.end(), jmp);
   MachineInstr *retq = BuildMI(MF, DebugLoc(), get(X86::RETQ));
-  MBB.insert(MBB.end(), retq);
+  MBB.insert(MBB.end(), retq);  
+
+  MachineInstr *retq_plus = BuildMI(MF, DebugLoc(), get(X86::RETQ));
+  MBB.insert(MBB.end(), retq_plus);
 }
 
 MachineBasicBlock::iterator
