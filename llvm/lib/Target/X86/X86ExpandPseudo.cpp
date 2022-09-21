@@ -402,12 +402,24 @@ bool X86ExpandPseudo::ExpandMI(MachineBasicBlock &MBB,
     int64_t StackAdj = MBBI->getOperand(0).getImm();
     MachineInstrBuilder MIB;
     if (StackAdj == 0) {
-      MIB = BuildMI(MBB, MBBI, DL,
-                    TII->get(STI->is64Bit() ? X86::RETQ : X86::RETL));
+
+      // BuildMI(MBB, MBBI, DL, TII->get(X86::MOV64rr)).addReg(X86::RSP).addReg(X86::RBP);
+      // addRegOffset(BuildMI(MBB, MBBI, DL, TII->get(X86::MOV64rm), X86::RBP), X86::RBP, false, 0);
+      // addRegOffset(BuildMI(MBB, MBBI, DL, TII->get(X86::MOV64rm), X86::R10),X86::RBP, false, 8);
+      BuildMI(MBB, MBBI, DL, TII->get(X86::POP64r)).addReg(X86::R9, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+      BuildMI(MBB, MBBI, DL, TII->get(X86::JMP64r)).addReg(X86::R9, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);      
+      MIB = BuildMI(MBB, MBBI, DL,TII->get(STI->is64Bit() ? X86::RETQ : X86::RETL));
+
+      MIB = BuildMI(MBB, MBBI, DL,TII->get(STI->is64Bit() ? X86::RETQ : X86::RETL));
     } else if (isUInt<16>(StackAdj)) {
-      MIB = BuildMI(MBB, MBBI, DL,
-                    TII->get(STI->is64Bit() ? X86::RETIQ : X86::RETIL))
-                .addImm(StackAdj);
+      // BuildMI(MBB, MBBI, DL, TII->get(X86::MOV64rr)).addReg(X86::RSP).addReg(X86::RBP);
+      // addRegOffset(BuildMI(MBB, MBBI, DL, TII->get(X86::MOV64rm), X86::RBP), X86::RBP, false, 0);
+      // addRegOffset(BuildMI(MBB, MBBI, DL, TII->get(X86::MOV64rm), X86::R10),X86::RBP, false, 8);
+      BuildMI(MBB, MBBI, DL, TII->get(X86::POP64r)).addReg(X86::R9, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+      BuildMI(MBB, MBBI, DL, TII->get(X86::JMP64r)).addReg(X86::R9, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+      MIB = BuildMI(MBB, MBBI, DL, TII->get(STI->is64Bit() ? X86::RETIQ : X86::RETIL)).addImm(StackAdj);
+
+      MIB = BuildMI(MBB, MBBI, DL, TII->get(STI->is64Bit() ? X86::RETIQ : X86::RETIL)).addImm(StackAdj);
     } else {
       assert(!STI->is64Bit() &&
              "shouldn't need to do this for x86_64 targets!");

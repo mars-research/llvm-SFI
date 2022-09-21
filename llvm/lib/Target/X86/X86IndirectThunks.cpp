@@ -248,6 +248,13 @@ void RetpolineThunkInserter::populateThunk(MachineFunction &MF) {
       .addReg(ThunkReg);
 
   CallTarget->back().setPreInstrSymbol(MF, TargetSym);
+  // BuildMI(CallTarget, DebugLoc(), TII->get(X86::MOV64rr)).addReg(X86::RSP).addReg(X86::RBP);
+  // addRegOffset(BuildMI(CallTarget, DebugLoc(),TII->get(X86::MOV64rm), X86::RBP), X86::RBP, false, 0);
+  // addRegOffset(BuildMI(CallTarget, DebugLoc(),TII->get(X86::MOV64rm), X86::R10),X86::RBP, false, 8);
+  BuildMI(CallTarget, DebugLoc(), TII->get(X86::POP64r)).addReg(X86::R10, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+  BuildMI(CallTarget, DebugLoc(), TII->get(X86::JMP64r)).addReg(X86::R10, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+  BuildMI(CallTarget, DebugLoc(), TII->get(RetOpc));
+
   BuildMI(CallTarget, DebugLoc(), TII->get(RetOpc));
 }
 

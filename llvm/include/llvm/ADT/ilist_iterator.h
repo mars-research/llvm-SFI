@@ -135,7 +135,7 @@ public:
 
   // Accessors...
   reference operator*() const {
-    assert(!NodePtr->isKnownSentinel());
+    //assert(!NodePtr->isKnownSentinel());
     return *Access::getValuePtr(NodePtr);
   }
   pointer operator->() const { return &operator*(); }
