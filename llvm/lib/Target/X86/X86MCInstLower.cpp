@@ -112,6 +112,68 @@ void X86AsmPrinter::StackMapShadowTracker::count(MCInst &Inst,
       InShadow = false; // The shadow is big enough. Stop counting.
   }
 }
+void X86AsmPrinter::checkBBAlignment(){
+   //errs()<<"checkBBAlignment invoked\n";
+  OutStreamer->emitCodeAlignment(32);
+  OutStreamer->reset_counter();
+}
+
+void X86AsmPrinter::emitBuddleAlignment(){
+   //errs()<<"emitBuddleAlignment invoked\n";
+  OutStreamer->emitCodeAlignment(32);
+  OutStreamer->reset_counter();
+}
+
+void X86AsmPrinter::checkNaClCall(MachineInstr &MI){
+  //errs()<<"checkNaClCall invoked\n";
+}
+
+void X86AsmPrinter::NaClAlignTracker::CheckAndEmitAlign(MCInst &Inst, const MCSubtargetInfo &STI,
+               MCCodeEmitter *CodeEmitter, MCStreamer &OutStreamer){
+  SmallString<256> Code;
+  SmallVector<MCFixup, 4> Fixups;
+  raw_svector_ostream VecOS(Code);
+  CodeEmitter->encodeInstruction(Inst, VecOS, Fixups, STI);
+  //Inst.dump_pretty(errs());
+  //errs()<<"CheckAndEmitAlign invoked sz="<<Code.size()<<" Remaining_byte="<<Remaining_byte<<"\n";
+  if (Code.size() > OutStreamer.Remaining_byte){
+    OutStreamer.emitCodeAlignment(32);
+    OutStreamer.reset_counter();
+  }
+  OutStreamer.Remaining_byte -= Code.size();
+  OutStreamer.Current_byte += Code.size();
+}
+
+void X86AsmPrinter::NaClAlignTracker::CheckCallAndEmitAlign(MCInst &Inst, const MCSubtargetInfo &STI,
+               MCCodeEmitter *CodeEmitter, MCStreamer &OutStreamer){
+  
+  SmallString<256> Code;
+  SmallVector<MCFixup, 4> Fixups;
+  raw_svector_ostream VecOS(Code);
+  CodeEmitter->encodeInstruction(Inst, VecOS, Fixups, STI);
+  //errs()<<"CheckCallAndEmitAlign invoked size: "<<Code.size()<<"Remaining_byte "<<Remaining_byte<<"\n";
+  if (OutStreamer.Remaining_byte < Code.size()){
+    OutStreamer.emitCodeAlignment(32);
+    //errs()<<"emitting "<<32-Code.size()<<"byte worth of nops\n";
+    emitX86Nops(OutStreamer, 32-Code.size(),
+                &MF->getSubtarget<X86Subtarget>());
+  }else if (OutStreamer.Remaining_byte > Code.size()){
+    //errs()<<"emitting "<<Remaining_byte-Code.size()<<"byte worth of nops\n";
+    emitX86Nops(OutStreamer, OutStreamer.Remaining_byte-Code.size(),
+                &MF->getSubtarget<X86Subtarget>());
+  }
+  OutStreamer.reset_counter();
+}
+
+  int64_t X86AsmPrinter::NaClAlignTracker::GetInstEncodingLen(MCInst &Inst, const MCSubtargetInfo &STI,
+               MCCodeEmitter *CodeEmitter, MCStreamer &OutStreamer){
+
+    SmallString<256> Code;
+    SmallVector<MCFixup, 4> Fixups;
+    raw_svector_ostream VecOS(Code);
+    CodeEmitter->encodeInstruction(Inst, VecOS, Fixups, STI);
+    return Code.size();
+  }
 
 void X86AsmPrinter::StackMapShadowTracker::emitShadowPadding(
     MCStreamer &OutStreamer, const MCSubtargetInfo &STI) {
@@ -123,8 +185,13 @@ void X86AsmPrinter::StackMapShadowTracker::emitShadowPadding(
 }
 
 void X86AsmPrinter::EmitAndCountInstruction(MCInst &Inst) {
+  if(OutStreamer->is_buddling){
+        OutStreamer->emitInstruction(Inst, getSubtargetInfo());
+     return;
+  }
+  NaClAT.CheckAndEmitAlign(Inst, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
   OutStreamer->emitInstruction(Inst, getSubtargetInfo());
-  SMShadowTracker.count(Inst, getSubtargetInfo(), CodeEmitter.get());
+   SMShadowTracker.count(Inst, getSubtargetInfo(), CodeEmitter.get());
 }
 
 X86MCInstLower::X86MCInstLower(const MachineFunction &mf,
@@ -1262,6 +1329,7 @@ void X86AsmPrinter::LowerSTATEPOINT(const MachineInstr &MI,
     MCInst CallInst;
     CallInst.setOpcode(CallOpcode);
     CallInst.addOperand(CallTargetMCOp);
+    NaClAT.CheckAndEmitAlign(CallInst, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
     OutStreamer->emitInstruction(CallInst, getSubtargetInfo());
   }
 
@@ -1306,6 +1374,7 @@ void X86AsmPrinter::LowerFAULTING_OP(const MachineInstr &FaultingMI,
     if (auto MaybeOperand = MCIL.LowerMachineOperand(&FaultingMI, *I))
       MI.addOperand(MaybeOperand.getValue());
 
+  NaClAT.CheckAndEmitAlign(MI, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
   OutStreamer->AddComment("on-fault: " + HandlerLabel->getName());
   OutStreamer->emitInstruction(MI, getSubtargetInfo());
 }
@@ -1351,9 +1420,10 @@ void X86AsmPrinter::LowerPATCHABLE_OP(const MachineInstr &MI,
       // generate a 'legacy' NOP in the form of a 8B FF MOV EDI, EDI. Some tools
       // rely specifically on this pattern to be able to patch a function.
       // This is only for 32-bit targets, when using /arch:IA32 or /arch:SSE.
+      MCInst tmp = MCInstBuilder(X86::MOV32rr_REV).addReg(X86::EDI).addReg(X86::EDI);
+      NaClAT.CheckAndEmitAlign(tmp, *Subtarget, CodeEmitter.get(),*OutStreamer);
       OutStreamer->emitInstruction(
-          MCInstBuilder(X86::MOV32rr_REV).addReg(X86::EDI).addReg(X86::EDI),
-          *Subtarget);
+          tmp,*Subtarget);
     } else if (MinSize == 2 && Opcode == X86::PUSH64r) {
       // This is an optimization that lets us get away without emitting a nop in
       // many cases.
@@ -1368,6 +1438,7 @@ void X86AsmPrinter::LowerPATCHABLE_OP(const MachineInstr &MI,
     }
   }
 
+  NaClAT.CheckAndEmitAlign(MCI, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
   OutStreamer->emitInstruction(MCI, getSubtargetInfo());
 }
 
@@ -1713,6 +1784,8 @@ void X86AsmPrinter::LowerPATCHABLE_RET(const MachineInstr &MI,
   for (auto &MO : drop_begin(MI.operands()))
     if (auto MaybeOperand = MCIL.LowerMachineOperand(&MI, MO))
       Ret.addOperand(MaybeOperand.getValue());
+  
+  NaClAT.CheckAndEmitAlign(Ret, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
   OutStreamer->emitInstruction(Ret, getSubtargetInfo());
   emitX86Nops(*OutStreamer, 10, Subtarget);
   recordSled(CurSled, MI, SledKind::FUNCTION_EXIT, 2);
@@ -1752,6 +1825,8 @@ void X86AsmPrinter::LowerPATCHABLE_TAIL_CALL(const MachineInstr &MI,
   for (auto &MO : drop_begin(MI.operands()))
     if (auto MaybeOperand = MCIL.LowerMachineOperand(&MI, MO))
       TC.addOperand(MaybeOperand.getValue());
+  
+  NaClAT.CheckAndEmitAlign(TC, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
   OutStreamer->emitInstruction(TC, getSubtargetInfo());
 }
 
@@ -2368,6 +2443,8 @@ static void addConstantComments(const MachineInstr *MI,
 
 void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
   X86MCInstLower MCInstLowering(*MF, *this);
+  //errs()<<"X86AsmPrinter invoked!\n";
+  //MI->print(errs());
   const X86RegisterInfo *RI =
       MF->getSubtarget<X86Subtarget>().getRegisterInfo();
 
@@ -2617,15 +2694,68 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
   // in to the stackmap shadow.  The only way to achieve this is if the call
   // is at the end of the shadow.
   if (MI->isCall()) {
+
+     if(MI->getOpcode() == X86::CALL64r){
+        errs()<<MI->getOperand(0).getReg()<<"\n";
+         MCInst Masking_1 = MCInstBuilder(X86::AND64ri32).addReg(MI->getOperand(0).getReg()).addReg(MI->getOperand(0).getReg()).addOperand(MCOperand::createImm(0xFFFFFFFF)).addReg(X86::NoRegister);
+         MCInst Masking_2 = MCInstBuilder(X86::OR64rr).addReg(X86::NoRegister).addReg(MI->getOperand(0).getReg()).addReg(X86::R15);
+        
+         int total_len = NaClAT.GetInstEncodingLen(Masking_1, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
+         total_len += NaClAT.GetInstEncodingLen(Masking_2, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
+         total_len += NaClAT.GetInstEncodingLen(TmpInst, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
+
+         int remaining = OutStreamer->Remaining_byte;
+         if(remaining < total_len){
+           emitBuddleAlignment();
+         }
+         NaClAT.CheckAndEmitAlign(Masking_1, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
+         OutStreamer->emitInstruction(Masking_1, getSubtargetInfo());
+         NaClAT.CheckAndEmitAlign(Masking_2, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
+         OutStreamer->emitInstruction(Masking_2, getSubtargetInfo());
+         
+     }
     // Count then size of the call towards the shadow
     SMShadowTracker.count(TmpInst, getSubtargetInfo(), CodeEmitter.get());
     // Then flush the shadow so that we fill with nops before the call, not
     // after it.
     SMShadowTracker.emitShadowPadding(*OutStreamer, getSubtargetInfo());
     // Then emit the call
+    
+    NaClAT.CheckCallAndEmitAlign(TmpInst, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
     OutStreamer->emitInstruction(TmpInst, getSubtargetInfo());
     return;
   }
+
+  if (MI->isReturn()) {
+      MCInst POP = MCInstBuilder(X86::POP64r).addReg(X86::RDX);
+      MCInst Masking_1 = MCInstBuilder(X86::AND64ri32).addReg(X86::RDX).addReg(X86::RDX).addOperand(MCOperand::createImm(0xFFFFFFFF)).addReg(X86::NoRegister);
+      MCInst Masking_2 = MCInstBuilder(X86::OR64rr).addReg(X86::NoRegister).addReg(X86::RDX).addReg(X86::RDX);
+      MCInst JMP = MCInstBuilder(X86::JMP64r).addReg(X86::RDX);
+
+      int len = NaClAT.GetInstEncodingLen(POP, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
+      len += NaClAT.GetInstEncodingLen(Masking_1, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
+      len += NaClAT.GetInstEncodingLen(Masking_2, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
+      len += NaClAT.GetInstEncodingLen(JMP, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
+      len += NaClAT.GetInstEncodingLen(TmpInst, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
+      errs()<<"total ret len: "<< len<<"\n";
+        if (OutStreamer->Remaining_byte < len){
+          OutStreamer->emitCodeAlignment(32);
+          OutStreamer->reset_counter();
+        }
+      NaClAT.CheckAndEmitAlign(POP, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);     
+      OutStreamer->emitInstruction(POP, getSubtargetInfo());     
+      NaClAT.CheckAndEmitAlign(Masking_1, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);     
+      OutStreamer->emitInstruction(Masking_1, getSubtargetInfo());    
+      NaClAT.CheckAndEmitAlign(Masking_2, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);     
+      OutStreamer->emitInstruction(Masking_2, getSubtargetInfo());       
+      NaClAT.CheckAndEmitAlign(JMP, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);     
+      OutStreamer->emitInstruction(JMP, getSubtargetInfo());       
+      NaClAT.CheckAndEmitAlign(TmpInst, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);     
+      OutStreamer->emitInstruction(TmpInst, getSubtargetInfo());    
+      return;
+  }
+
+
 
   EmitAndCountInstruction(TmpInst);
 }

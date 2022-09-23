@@ -359,8 +359,49 @@ bool MCObjectStreamer::mayHaveInstructions(MCSection &Sec) const {
   return Sec.hasInstructions();
 }
 
+int64_t MCObjectStreamer::GetInstEncodingLen(const MCInst &Inst, const MCSubtargetInfo &STI){
+
+    SmallString<256> Code;
+    SmallVector<MCFixup, 4> Fixups;
+    raw_svector_ostream VecOS(Code);
+    getAssembler().getEmitter().encodeInstruction(Inst, VecOS, Fixups, STI);
+    return Code.size();
+  }
+
+void MCObjectStreamer::bundling_start() {
+  is_buddling = true;
+  }
+void MCObjectStreamer::bundling_end() {
+  is_buddling = false;
+  if (buffer_encoding_len > Remaining_byte){
+    emitCodeAlignment(32);
+    reset_counter();
+  }
+  for(unsigned long i = 0; i < MCInst_Buffer.size(); i++) {
+      errs()<<"emitting a MCInst :";
+      MCInst_Buffer[i].print(errs());
+      errs()<<"\n";
+      emitInstruction(MCInst_Buffer[i],MCSubtargetInfo_Buffer[i]);
+  }
+  MCInst_Buffer.clear();
+  MCSubtargetInfo_Buffer.clear();
+    buffer_encoding_len = 0;
+    }
+
+
 void MCObjectStreamer::emitInstruction(const MCInst &Inst,
                                        const MCSubtargetInfo &STI) {
+
+  if(is_buddling){
+    errs()<<"buffering a MCInst :";
+    Inst.print(errs());
+    errs()<<"\n";
+    buffer_encoding_len += GetInstEncodingLen(Inst,STI);
+    MCInst_Buffer.push_back(Inst);
+    MCSubtargetInfo_Buffer.push_back(STI);
+    return;
+  }
+
   const MCSection &Sec = *getCurrentSectionOnly();
   if (Sec.isVirtualSection()) {
     getContext().reportError(Inst.getLoc(), Twine(Sec.getVirtualSectionKind()) +
@@ -376,6 +417,8 @@ void MCObjectStreamer::emitInstruction(const MCInst &Inst,
 void MCObjectStreamer::emitInstructionImpl(const MCInst &Inst,
                                            const MCSubtargetInfo &STI) {
   MCStreamer::emitInstruction(Inst, STI);
+
+  
 
   MCSection *Sec = getCurrentSectionOnly();
   Sec->setHasInstructions(true);

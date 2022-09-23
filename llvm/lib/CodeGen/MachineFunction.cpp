@@ -154,6 +154,13 @@ void MachineFunction::handleRemoval(MachineInstr &MI) {
 
 void MachineFunction::init() {
   // Assume the function starts in SSA form with correct liveness.
+  //    errs()<<"MachineFunction init\n";
+  //    for (auto &MBB : *this) {
+  //      for (auto &MI : MBB) {
+  //        MI.print(errs());
+  //      }
+  //    }
+  //  errs()<<"end of MachineFunction init\n";
   Properties.set(MachineFunctionProperties::Property::IsSSA);
   Properties.set(MachineFunctionProperties::Property::TracksLiveness);
   if (STI->getRegisterInfo())

@@ -4000,6 +4000,25 @@ void X86AsmParser::applyLVILoadHardeningMitigation(MCInst &Inst,
 
 void X86AsmParser::emitInstruction(MCInst &Inst, OperandVector &Operands,
                                    MCStreamer &Out) {
+  errs()<<"X86AsmParser invoked;";
+    errs()<<X86::Meow;
+  Inst.print(errs());
+  if(Inst.getNumOperands()>=1){
+    if(Inst.getOperand(0).isReg()){
+       errs()<<Inst.getOperand(0).getReg();
+     if(Inst.getOperand(0).getReg()==X86::Meow){
+        errs()<<"find Meow\n";
+        Out.bundling_start();
+        return;
+      }
+      else if(Inst.getOperand(0).getReg()==X86::Woem){
+        errs()<<"find Woem\n";
+        Out.bundling_end();
+        return;
+      }              
+    }
+  }
+    
   if (LVIInlineAsmHardening &&
       getSTI().getFeatureBits()[X86::FeatureLVIControlFlowIntegrity])
     applyLVICFIMitigation(Inst, Out);

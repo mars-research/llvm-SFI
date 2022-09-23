@@ -247,11 +247,11 @@ MachineBasicBlock::iterator MachineBasicBlock::getFirstTerminator() {
     ++I;
 
   //for SXFI_RET
-    
+
+  /* 
   MachineBasicBlock::iterator TMP_MI = B;
 
   if(I->getFlag(MachineInstr::MIFlag::SXFI_RET)){
-    print(errs());
      while(TMP_MI != I){
        if(TMP_MI->getFlag(MachineInstr::MIFlag::SXFI_RET)){
          I = TMP_MI;
@@ -259,9 +259,8 @@ MachineBasicBlock::iterator MachineBasicBlock::getFirstTerminator() {
        }
        TMP_MI++;
     }
-    I->print(errs());
   }
-  
+  */  
 
 
 

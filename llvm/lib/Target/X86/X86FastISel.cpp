@@ -1302,18 +1302,18 @@ bool X86FastISel::X86SelectRet(const Instruction *I) {
     // BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(X86::MOV64rr)).addReg(X86::RSP).addReg(X86::RBP);
     // addRegOffset(BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,TII.get(X86::MOV64rm), X86::RBP),X86::RBP, false, 0);
     // addRegOffset(BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,TII.get(X86::MOV64rm), X86::R10),X86::RBP, false, 8);
-    BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(X86::POP64r)).addReg(X86::RDX, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
-    BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(X86::JMP64r)).addReg(X86::RDX, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
-    MIB = BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,TII.get(Subtarget->is64Bit() ? X86::RETIQ : X86::RETIL)).addImm(X86MFInfo->getBytesToPopOnReturn()).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+    //BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(X86::POP64r)).addReg(X86::RDX, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+    //BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(X86::JMP64r)).addReg(X86::RDX, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+   // MIB = BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,TII.get(Subtarget->is64Bit() ? X86::RETIQ : X86::RETIL)).addImm(X86MFInfo->getBytesToPopOnReturn()).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
     
     MIB = BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,TII.get(Subtarget->is64Bit() ? X86::RETIQ : X86::RETIL)).addImm(X86MFInfo->getBytesToPopOnReturn()).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
   } else {
     // BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(X86::MOV64rr)).addReg(X86::RSP).addReg(X86::RBP);
     // addRegOffset(BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,TII.get(X86::MOV64rm), X86::RBP), X86::RBP, false, 0);
     // addRegOffset(BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,TII.get(X86::MOV64rm), X86::RBP),X86::RBP, false, 8);
-    BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(X86::POP64r)).addReg(X86::RDX, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
-    BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(X86::JMP64r)).addReg(X86::RDX, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
-    MIB = BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,TII.get(Subtarget->is64Bit() ? X86::RETQ : X86::RETL)).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+    //BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(X86::POP64r)).addReg(X86::RDX, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+    //BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(X86::JMP64r)).addReg(X86::RDX, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+    //MIB = BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,TII.get(Subtarget->is64Bit() ? X86::RETQ : X86::RETL)).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
     
     MIB = BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,TII.get(Subtarget->is64Bit() ? X86::RETQ : X86::RETL)).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
    
@@ -3595,6 +3595,8 @@ bool X86FastISel::fastLowerCall(CallLoweringInfo &CLI) {
 
 bool
 X86FastISel::fastSelectInstruction(const Instruction *I)  {
+  // errs()<<"fastSelectInstruction :";
+  // I->print(errs());
   switch (I->getOpcode()) {
   default: break;
   case Instruction::Load:

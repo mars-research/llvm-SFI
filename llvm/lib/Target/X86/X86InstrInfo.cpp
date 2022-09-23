@@ -9109,15 +9109,15 @@ void X86InstrInfo::buildOutlinedFrame(MachineBasicBlock &MBB,
   // // addRegOffset(*test1,
   // //                  X86::RBP, false, 0);
   // MBB.insert(MBB.end(), test1);
-  MachineInstr *pop=  BuildMI(MF, DebugLoc(), get(X86::POP64r)).addReg(X86::R8, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
-  MBB.insert(MBB.end(), pop);
-  MachineInstr *jmp=  BuildMI(MF, DebugLoc(), get(X86::MOV64rr)).addReg(X86::R8, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
-  MBB.insert(MBB.end(), jmp);
+  //MachineInstr *pop=  BuildMI(MF, DebugLoc(), get(X86::POP64r)).addReg(X86::R8, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+  //MBB.insert(MBB.end(), pop);
+  //MachineInstr *jmp=  BuildMI(MF, DebugLoc(), get(X86::JMP64r)).addReg(X86::R8, RegState::Define).setMIFlag(MachineInstr::MIFlag::SXFI_RET).setMIFlag(MachineInstr::MIFlag::FrameDestroy);
+  //MBB.insert(MBB.end(), jmp);
   MachineInstr *retq = BuildMI(MF, DebugLoc(), get(X86::RETQ));
   MBB.insert(MBB.end(), retq);  
 
-  MachineInstr *retq_plus = BuildMI(MF, DebugLoc(), get(X86::RETQ));
-  MBB.insert(MBB.end(), retq_plus);
+  //MachineInstr *retq_plus = BuildMI(MF, DebugLoc(), get(X86::RETQ));
+  //MBB.insert(MBB.end(), retq_plus);
 }
 
 MachineBasicBlock::iterator

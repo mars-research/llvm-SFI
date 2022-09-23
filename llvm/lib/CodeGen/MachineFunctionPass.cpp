@@ -44,6 +44,20 @@ bool MachineFunctionPass::runOnFunction(Function &F) {
   MachineFunction &MF = MMI.getOrCreateMachineFunction(F);
 
   MachineFunctionProperties &MFProps = MF.getProperties();
+  //   errs()<<"runOnFunction I: \n";
+  //    for (auto &BB : F) {
+  //      for (auto &I : BB) {
+  //        I.print(errs());
+  //      }
+  //    }
+  //  errs()<<"end of runOnFunction\n";
+  //  errs()<<"runOnFunction MI: \n";
+  //    for (auto &MBB : MF) {
+  //      for (auto &MI : MBB) {
+  //        MI.print(errs());
+  //      }
+  //    }
+  //  errs()<<"end of runOnFunction\n";
 
 #ifndef NDEBUG
   if (!MFProps.verifyRequiredProperties(RequiredProperties)) {
@@ -70,6 +84,7 @@ bool MachineFunctionPass::runOnFunction(Function &F) {
     CountBefore = MF.getInstructionCount();
 
   bool RV = runOnMachineFunction(MF);
+
 
   if (ShouldEmitSizeRemarks) {
     // We wanted size remarks. Check if there was a change to the number of

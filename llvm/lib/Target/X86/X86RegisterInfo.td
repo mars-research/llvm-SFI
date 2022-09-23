@@ -185,6 +185,8 @@ def R12 : X86Reg<"r12", 12, [R12D]>, DwarfRegNum<[12, -2, -2]>;
 def R13 : X86Reg<"r13", 13, [R13D]>, DwarfRegNum<[13, -2, -2]>;
 def R14 : X86Reg<"r14", 14, [R14D]>, DwarfRegNum<[14, -2, -2]>;
 def R15 : X86Reg<"r15", 15, [R15D]>, DwarfRegNum<[15, -2, -2]>;
+def Meow : X86Reg<"Meow", 15, [R15D]>, DwarfRegNum<[15, -2, -2]>;
+def Woem : X86Reg<"Woem", 15, [R15D]>, DwarfRegNum<[15, -2, -2]>;
 def RIP : X86Reg<"rip",  0, [EIP]>,  DwarfRegNum<[16, -2, -2]>;
 }}
 
@@ -435,7 +437,7 @@ def GR32 : RegisterClass<"X86", [i32], 32,
 
 def GR64 : RegisterClass<"X86", [i64], 64,
                          (add RAX, RCX, RDX, RSI, RDI, R8, R9, R10, R11,
-                              RBX, R14, R15, R12, R13, RBP, RSP, RIP)>;
+                              RBX, R14, R15, Meow, Woem, R12, R13, RBP, RSP, RIP)>;
 
 // Segment registers for use by MOV instructions (and others) that have a
 //   segment register as one operand.  Always contain a 16-bit segment

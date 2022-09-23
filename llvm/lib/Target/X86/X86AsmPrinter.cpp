@@ -59,12 +59,22 @@ bool X86AsmPrinter::runOnMachineFunction(MachineFunction &MF) {
   Subtarget = &MF.getSubtarget<X86Subtarget>();
 
   SMShadowTracker.startFunction(MF);
+  NaClAT.startFunction(MF);
   CodeEmitter.reset(TM.getTarget().createMCCodeEmitter(
       *Subtarget->getInstrInfo(), *Subtarget->getRegisterInfo(),
       MF.getContext()));
 
   EmitFPOData =
       Subtarget->isTargetWin32() && MF.getMMI().getModule()->getCodeViewFlag();
+
+  //  errs()<<"end of runOnMachineFunction \n";
+  //  errs()<<"runOnMachineFunction MI:\n";
+  //    for (auto &MBB : MF) {
+  //      for (auto &MI : MBB) {
+  //        MI.print(errs());
+  //      }
+  //    }
+  //  errs()<<"end of runOnMachineFunction\n";
 
   SetupMachineFunction(MF);
 

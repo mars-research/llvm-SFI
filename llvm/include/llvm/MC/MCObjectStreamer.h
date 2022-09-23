@@ -66,6 +66,9 @@ protected:
 public:
   /// state management
   void reset() override;
+  void bundling_start() override;
+  void bundling_end() override;
+  int64_t GetInstEncodingLen(const MCInst &Inst, const MCSubtargetInfo &STI);
 
   /// Object streamers require the integrated assembler.
   bool isIntegratedAssemblerRequired() const override { return true; }

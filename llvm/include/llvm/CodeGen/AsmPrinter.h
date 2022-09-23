@@ -218,6 +218,9 @@ protected:
 public:
   ~AsmPrinter() override;
 
+  virtual void checkBBAlignment(){}
+  virtual void checkNaClCall(MachineInstr &MI){}
+
   DwarfDebug *getDwarfDebug() { return DD; }
   DwarfDebug *getDwarfDebug() const { return DD; }
 

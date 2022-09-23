@@ -111,6 +111,9 @@ public:
                                         // (e.g. branch folding) should skip
                                         // this instruction.
     SXFI_RET      = 1 << 16,            // this is for SXFI return edge
+    SXFI_CALL      = 1 << 17,            // this is for SXFI forward edge
+    SXFI_LS_S      = 1 << 18,            // this is for SXFI load and store
+    SXFI_LS_E      = 1 << 19,            // this is for SXFI load and store
   };
 
 private:

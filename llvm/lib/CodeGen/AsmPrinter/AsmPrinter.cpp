@@ -1246,6 +1246,7 @@ static bool needFuncLabelsForEHOrDebugInfo(const MachineFunction &MF) {
 /// EmitFunctionBody - This method emits the body and trailer for a
 /// function.
 void AsmPrinter::emitFunctionBody() {
+  //abort();
   emitFunctionHeader();
 
   // Emit target-specific gunk before the function body.
@@ -1275,10 +1276,16 @@ void AsmPrinter::emitFunctionBody() {
 
   bool CanDoExtraAnalysis = ORE->allowExtraAnalysis(DEBUG_TYPE);
   for (auto &MBB : *MF) {
+    checkBBAlignment();
+    //OutStreamer->emitCodeAlignment(32);
+    // errs()<<"Function name"<<MF->getName()<<"\n";
+    // MBB.print(errs());
+    // errs()<<"\n\n";
     // Print a label for the basic block.
     emitBasicBlockStart(MBB);
     DenseMap<StringRef, unsigned> MnemonicCounts;
     for (auto &MI : MBB) {
+        checkNaClCall(MI);
       // Print the assembly for the instruction.
       if (!MI.isPosition() && !MI.isImplicitDef() && !MI.isKill() &&
           !MI.isDebugInstr()) {

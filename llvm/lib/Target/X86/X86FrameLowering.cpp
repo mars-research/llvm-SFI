@@ -2083,7 +2083,6 @@ void X86FrameLowering::emitEpilogue(MachineFunction &MF,
   while (MBBI != MBB.begin()) {
     MachineBasicBlock::iterator PI = std::prev(MBBI);
     unsigned Opc = PI->getOpcode();
-    errs()<<PI->getOpcode()<<"\n"<<PI->getFlag(MachineInstr::FrameDestroy)<<"\n";
 
     if (Opc != X86::DBG_VALUE && !PI->isTerminator()) {
       if ((Opc != X86::POP32r || !PI->getFlag(MachineInstr::FrameDestroy)) &&

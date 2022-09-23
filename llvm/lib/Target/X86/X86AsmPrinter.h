@@ -72,6 +72,24 @@ class LLVM_LIBRARY_VISIBILITY X86AsmPrinter : public AsmPrinter {
 
   StackMapShadowTracker SMShadowTracker;
 
+  class NaClAlignTracker {
+  public:
+    void startFunction(MachineFunction &MF) {
+      this->MF = &MF;
+    }
+    void CheckAndEmitAlign(MCInst &Inst, const MCSubtargetInfo &STI,
+               MCCodeEmitter *CodeEmitter, MCStreamer &OutStreamer);
+    void CheckCallAndEmitAlign(MCInst &Inst, const MCSubtargetInfo &STI,
+               MCCodeEmitter *CodeEmitter, MCStreamer &OutStreamer);
+    int64_t GetInstEncodingLen(MCInst &Inst, const MCSubtargetInfo &STI,
+               MCCodeEmitter *CodeEmitter, MCStreamer &OutStreamer);
+
+    // Called to signal the start of a shadow of RequiredSize bytes.
+    const MachineFunction *MF = nullptr;
+  };
+
+  NaClAlignTracker NaClAT;
+
   // All instructions emitted by the X86AsmPrinter should use this helper
   // method.
   //
@@ -112,7 +130,9 @@ class LLVM_LIBRARY_VISIBILITY X86AsmPrinter : public AsmPrinter {
                          const char *Modifier);
   void PrintIntelMemReference(const MachineInstr *MI, unsigned OpNo,
                               raw_ostream &O, const char *Modifier);
-
+  void checkBBAlignment() override;
+  void emitBuddleAlignment();
+  void checkNaClCall(MachineInstr &MI) override;
 public:
   X86AsmPrinter(TargetMachine &TM, std::unique_ptr<MCStreamer> Streamer);
 

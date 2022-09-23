@@ -2234,6 +2234,8 @@ void MCAsmStreamer::emitInstruction(const MCInst &Inst,
   assert(getCurrentSectionOnly() &&
          "Cannot emit contents before setting section!");
 
+  //errs()<<"MCAsmStreamer invoked";
+
   if (!MAI->usesDwarfFileAndLocDirectives())
     // Now that a machine instruction has been assembled into this section, make
     // a line entry for any .loc directive that has been seen.
@@ -2256,7 +2258,7 @@ void MCAsmStreamer::emitInstruction(const MCInst &Inst,
   StringRef Comments = CommentToEmit;
   if (Comments.size() && Comments.back() != '\n')
     GetCommentOS() << "\n";
-
+  //emitCodeAlignment(32);
   EmitEOL();
 }
 

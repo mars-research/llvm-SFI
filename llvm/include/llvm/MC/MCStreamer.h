@@ -235,6 +235,17 @@ class MCStreamer {
   /// discussion for future inclusion.
   bool AllowAutoPadding = false;
 
+public:
+   std::vector<MCInst> MCInst_Buffer;
+   std::vector<MCSubtargetInfo> MCSubtargetInfo_Buffer;
+   int64_t buffer_encoding_len = 0;
+  bool is_buddling = false;
+    unsigned Current_byte = 0, Remaining_byte = 32;
+   void reset_counter() {
+      Current_byte = 0;
+      Remaining_byte = 32;
+    }
+  
 protected:
   MCStreamer(MCContext &Ctx);
 
@@ -274,6 +285,9 @@ public:
   /// State management
   ///
   virtual void reset();
+  virtual void bundling_start(){errs()<<"bad bundling_start \n";};
+  virtual void bundling_end(){errs()<<"bad bundling_end \n";};
+
 
   MCContext &getContext() const { return Context; }
 

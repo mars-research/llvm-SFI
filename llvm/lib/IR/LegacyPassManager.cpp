@@ -1419,8 +1419,11 @@ bool FPPassManager::runOnFunction(Function &F) {
 
   llvm::TimeTraceScope FunctionScope("OptFunction", F.getName());
 
+
   for (unsigned Index = 0; Index < getNumContainedPasses(); ++Index) {
     FunctionPass *FP = getContainedPass(Index);
+    //asm("int3;");
+    //errs()<<"FunctionPass :"<<FP->getPassName()<<"\n";
     bool LocalChanged = false;
 
     llvm::TimeTraceScope PassScope("RunPass", FP->getPassName());

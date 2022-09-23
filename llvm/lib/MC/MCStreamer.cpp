@@ -1082,11 +1082,13 @@ void MCStreamer::visitUsedExpr(const MCExpr &Expr) {
   }
 }
 
-void MCStreamer::emitInstruction(const MCInst &Inst, const MCSubtargetInfo &) {
+void MCStreamer::emitInstruction(const MCInst &Inst, const MCSubtargetInfo &STI) {
   // Scan for values.
+  //errs()<<"MCStreamer invoked;"
   for (unsigned i = Inst.getNumOperands(); i--;)
     if (Inst.getOperand(i).isExpr())
       visitUsedExpr(*Inst.getOperand(i).getExpr());
+  //emitCodeAlignment(32);
 }
 
 void MCStreamer::emitPseudoProbe(uint64_t Guid, uint64_t Index, uint64_t Type,
