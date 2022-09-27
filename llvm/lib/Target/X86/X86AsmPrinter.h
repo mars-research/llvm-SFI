@@ -114,6 +114,7 @@ class LLVM_LIBRARY_VISIBILITY X86AsmPrinter : public AsmPrinter {
                               raw_ostream &O, const char *Modifier);
 
 public:
+  void emitCFISSFIFwd() override;
   X86AsmPrinter(TargetMachine &TM, std::unique_ptr<MCStreamer> Streamer);
 
   StringRef getPassName() const override {
@@ -148,6 +149,9 @@ public:
   bool runOnMachineFunction(MachineFunction &MF) override;
   void emitFunctionBodyStart() override;
   void emitFunctionBodyEnd() override;
+
+  int countInstruction(MCInst &Inst,const MCSubtargetInfo &STI,
+                                                 MCCodeEmitter *CodeEmitter);
 };
 
 } // end namespace llvm

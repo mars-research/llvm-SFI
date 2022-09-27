@@ -218,6 +218,7 @@ protected:
 public:
   ~AsmPrinter() override;
 
+  virtual void emitCFISSFIFwd(){};
   DwarfDebug *getDwarfDebug() { return DD; }
   DwarfDebug *getDwarfDebug() const { return DD; }
 

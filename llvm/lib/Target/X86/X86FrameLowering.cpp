@@ -1991,6 +1991,7 @@ static bool isTailCallOpcode(unsigned Opc) {
         Opc == X86::TCRETURNmi64;
 }
 
+//ssfi 
 void X86FrameLowering::emitEpilogue(MachineFunction &MF,
                                     MachineBasicBlock &MBB) const {
   const MachineFrameInfo &MFI = MF.getFrameInfo();
@@ -2083,6 +2084,7 @@ void X86FrameLowering::emitEpilogue(MachineFunction &MF,
   while (MBBI != MBB.begin()) {
     MachineBasicBlock::iterator PI = std::prev(MBBI);
     unsigned Opc = PI->getOpcode();
+    //errs()<<PI->getOpcode()<<"\n"<<PI->getFlag(MachineInstr::FrameDestroy)<<"\n";
 
     if (Opc != X86::DBG_VALUE && !PI->isTerminator()) {
       if ((Opc != X86::POP32r || !PI->getFlag(MachineInstr::FrameDestroy)) &&
@@ -2143,6 +2145,7 @@ void X86FrameLowering::emitEpilogue(MachineFunction &MF,
     }
   } else if (NumBytes) {
     // Adjust stack pointer back: ESP += numbytes.
+    //MF.print(errs());
     emitSPUpdate(MBB, MBBI, DL, NumBytes, /*InEpilogue=*/true);
     if (!hasFP(MF) && NeedsDwarfCFI) {
       // Define the current CFA rule to use the provided offset.
@@ -2646,6 +2649,20 @@ bool X86FrameLowering::restoreCalleeSavedRegisters(
   }
 
   DebugLoc DL = MBB.findDebugLoc(MI);
+
+  // MachineBasicBlock::iterator TMP_MI = MI;
+  // //TMP_MI--;
+  // while(TMP_MI !=  MBB.begin()){
+  //   errs()<<"find SXFI_RET!\n";
+  //   if(TMP_MI->getFlag(MachineInstr::MIFlag::SXFI_RET)){
+  //     TMP_MI--;
+  //   }
+  //   else{
+  //     TMP_MI++;
+  //     break;
+  //   }
+  // }
+  // MI = TMP_MI;
 
   // Reload XMMs from stack frame.
   for (unsigned i = 0, e = CSI.size(); i != e; ++i) {

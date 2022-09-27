@@ -2366,6 +2366,17 @@ static void addConstantComments(const MachineInstr *MI,
   }
 }
 
+int X86AsmPrinter::countInstruction(MCInst &Inst,
+                                                 const MCSubtargetInfo &STI,
+                                                 MCCodeEmitter *CodeEmitter) {
+    SmallString<256> Code;
+    SmallVector<MCFixup, 4> Fixups;
+    raw_svector_ostream VecOS(Code);
+    CodeEmitter->encodeInstruction(Inst, VecOS, Fixups, STI);
+    return Code.size();
+
+}
+
 void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
   X86MCInstLower MCInstLowering(*MF, *this);
   const X86RegisterInfo *RI =
@@ -2623,9 +2634,49 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
     // after it.
     SMShadowTracker.emitShadowPadding(*OutStreamer, getSubtargetInfo());
     // Then emit the call
+
+    MCInst RET_ADDR = MCInstBuilder(X86::LEA64r).addReg(X86::RAX).addReg(X86::RIP).addImm(1).addReg(0).addImm(0x16).addReg(0);
+    //MCInst RET_ADDR = MCInstBuilder(X86::ADD64ri8).addReg(X86::RAX).addReg(X86::RIP).addOperand(MCOperand::createImm(0x8));
+    MCInst ADD = MCInstBuilder(X86::ADD64ri8).addReg(X86::R14).addReg(X86::R14).addOperand(MCOperand::createImm(0x8));
+    MCInst MOV = MCInstBuilder(X86::MOV64mr).addReg(X86::R14).addImm(1).addReg(X86::NoRegister).addImm(0).addReg(X86::NoRegister).addReg(X86::RAX);
+
+    //Inst_len = countInstruction(RET_ADDR,getSubtargetInfo(),CodeEmitter.get());
+   int Inst_len = countInstruction(ADD,getSubtargetInfo(),CodeEmitter.get());
+    Inst_len += countInstruction(MOV,getSubtargetInfo(),CodeEmitter.get());
+    Inst_len += countInstruction(TmpInst,getSubtargetInfo(),CodeEmitter.get());
+    RET_ADDR = MCInstBuilder(X86::LEA64r).addReg(X86::RAX).addReg(X86::RIP).addImm(1).addReg(0).addImm(Inst_len).addReg(0);
+    //errs()<<"Inst_len: "<<Inst_len<<"\n";
+
+    OutStreamer->emitInstruction(RET_ADDR, getSubtargetInfo());
+    OutStreamer->emitInstruction(ADD, getSubtargetInfo());
+    OutStreamer->emitInstruction(MOV, getSubtargetInfo());
     OutStreamer->emitInstruction(TmpInst, getSubtargetInfo());
     return;
   }
 
+  if(MI->isReturn()){
+    MCInst MOV = MCInstBuilder(X86::MOV64rm).addReg(X86::RDX).addReg(X86::R14).addImm(1).addReg(X86::NoRegister).addImm(0).addReg(X86::NoRegister);
+    MCInst SUB = MCInstBuilder(X86::SUB64ri8).addReg(X86::R14).addReg(X86::R14).addOperand(MCOperand::createImm(0x8));
+    MCInst POP = MCInstBuilder(X86::POP64r).addReg(X86::RDX);
+    MCInst JMP = MCInstBuilder(X86::JMP64r).addReg(X86::RDX);
+
+    OutStreamer->emitInstruction(MOV, getSubtargetInfo()); 
+    OutStreamer->emitInstruction(SUB, getSubtargetInfo());
+    OutStreamer->emitInstruction(POP, getSubtargetInfo()); 
+    OutStreamer->emitInstruction(JMP, getSubtargetInfo()); 
+  }else{
+    //this is the first instr of the function need to save return addr to R14
+    // auto I = MI->getMF()->front().getFirstNonDebugInstr();
+    // if(I == MI){
+    //   MCInst RET_ADDR = MCInstBuilder(X86::MOV64rm).addReg(X86::RAX).addReg(X86::RSP).addImm(1).addReg(X86::NoRegister).addImm(0).addReg(X86::NoRegister);
+    //   MCInst ADD = MCInstBuilder(X86::ADD64ri8).addReg(X86::R14).addReg(X86::R14).addOperand(MCOperand::createImm(0x8));
+    //   MCInst MOV = MCInstBuilder(X86::MOV64mr).addReg(X86::R14).addImm(1).addReg(X86::NoRegister).addImm(0).addReg(X86::NoRegister).addReg(X86::RAX);
+    //   OutStreamer->emitInstruction(RET_ADDR, getSubtargetInfo()); 
+    //   OutStreamer->emitInstruction(ADD, getSubtargetInfo()); 
+    //   OutStreamer->emitInstruction(MOV, getSubtargetInfo()); 
+    // }
+  }
+
   EmitAndCountInstruction(TmpInst);
 }
+

@@ -1269,14 +1269,18 @@ void AsmPrinter::emitFunctionBody() {
     }
   }
 
+  emitCFISSFIFwd();
+
   // Print out code for the function.
   bool HasAnyRealCode = false;
   int NumInstsInFunction = 0;
-
+  //errs()<<"MF :"<<MF->getName()<<"\n";
   bool CanDoExtraAnalysis = ORE->allowExtraAnalysis(DEBUG_TYPE);
   for (auto &MBB : *MF) {
     // Print a label for the basic block.
     emitBasicBlockStart(MBB);
+    //errs()<<"BB: "<<"\n";
+    //MBB.print(errs());
     DenseMap<StringRef, unsigned> MnemonicCounts;
     for (auto &MI : MBB) {
       // Print the assembly for the instruction.

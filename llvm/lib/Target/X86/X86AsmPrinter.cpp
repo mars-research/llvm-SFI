@@ -90,6 +90,12 @@ bool X86AsmPrinter::runOnMachineFunction(MachineFunction &MF) {
   return false;
 }
 
+void X86AsmPrinter::emitCFISSFIFwd(){
+ auto I = MF->front().getFirstNonDebugInstr();
+ I->print(errs());
+ errs()<<"emitCFISSFIFwd\n";
+}
+
 void X86AsmPrinter::emitFunctionBodyStart() {
   if (EmitFPOData) {
     if (auto *XTS =
