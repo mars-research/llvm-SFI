@@ -91,9 +91,7 @@ bool X86AsmPrinter::runOnMachineFunction(MachineFunction &MF) {
 }
 
 void X86AsmPrinter::emitCFISSFIFwd(){
- auto I = MF->front().getFirstNonDebugInstr();
- I->print(errs());
- errs()<<"emitCFISSFIFwd\n";
+ return;//this is not used for now
 }
 
 void X86AsmPrinter::emitFunctionBodyStart() {

@@ -2635,16 +2635,41 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
     SMShadowTracker.emitShadowPadding(*OutStreamer, getSubtargetInfo());
     // Then emit the call
 
-    MCInst RET_ADDR = MCInstBuilder(X86::LEA64r).addReg(X86::RAX).addReg(X86::RIP).addImm(1).addReg(0).addImm(0x16).addReg(0);
+    MCOperand &Op = TmpInst.getOperand(0);
+    TmpInst.print(errs());
+    if (Op.getExpr()){
+        if (Op.getExpr()->getKind()==MCExpr::SymbolRef){
+        const MCSymbolRefExpr &SRE = cast<MCSymbolRefExpr>(*Op.getExpr());
+        const MCSymbol &Sym = SRE.getSymbol();
+        errs()<<Sym.getName()<<"\n";
+        if (Sym.getName() == "sxfi_check_deref" || Sym.getName() == "sxfi_capability_check"){
+           OutStreamer->emitInstruction(TmpInst, getSubtargetInfo());
+           errs()<<"not emitting shadow stack for SXFI_checks\n"; //debug log (delete);
+           return;
+        }
+        // only use it if linking with unmodified libc
+        //      const MCSymbolRefExpr::VariantKind Kind = SRE.getKind();
+        //  if (Kind != MCSymbolRefExpr::VK_None) {
+        //    errs()<<"MCSymbolRefExpr::getVariantKindName(Kind) \n"<<MCSymbolRefExpr::getVariantKindName(Kind)<<"\n";
+        //      if (MCSymbolRefExpr::getVariantKindName(Kind)=="PLT"){
+        //        OutStreamer->emitInstruction(TmpInst, getSubtargetInfo());
+        //      errs()<<"not emitting shadow stack for libc\n"; //tmp change (delete);
+        //        return;
+        //    }
+        //  }
+      }
+    }
+
+    MCInst RET_ADDR = MCInstBuilder(X86::LEA64r).addReg(X86::R10).addReg(X86::RIP).addImm(1).addReg(0).addImm(0x16).addReg(0);
     //MCInst RET_ADDR = MCInstBuilder(X86::ADD64ri8).addReg(X86::RAX).addReg(X86::RIP).addOperand(MCOperand::createImm(0x8));
     MCInst ADD = MCInstBuilder(X86::ADD64ri8).addReg(X86::R14).addReg(X86::R14).addOperand(MCOperand::createImm(0x8));
-    MCInst MOV = MCInstBuilder(X86::MOV64mr).addReg(X86::R14).addImm(1).addReg(X86::NoRegister).addImm(0).addReg(X86::NoRegister).addReg(X86::RAX);
+    MCInst MOV = MCInstBuilder(X86::MOV64mr).addReg(X86::R14).addImm(1).addReg(X86::NoRegister).addImm(0).addReg(X86::NoRegister).addReg(X86::R10);
 
     //Inst_len = countInstruction(RET_ADDR,getSubtargetInfo(),CodeEmitter.get());
    int Inst_len = countInstruction(ADD,getSubtargetInfo(),CodeEmitter.get());
     Inst_len += countInstruction(MOV,getSubtargetInfo(),CodeEmitter.get());
     Inst_len += countInstruction(TmpInst,getSubtargetInfo(),CodeEmitter.get());
-    RET_ADDR = MCInstBuilder(X86::LEA64r).addReg(X86::RAX).addReg(X86::RIP).addImm(1).addReg(0).addImm(Inst_len).addReg(0);
+    RET_ADDR = MCInstBuilder(X86::LEA64r).addReg(X86::R10).addReg(X86::RIP).addImm(1).addReg(0).addImm(Inst_len).addReg(0);
     //errs()<<"Inst_len: "<<Inst_len<<"\n";
 
     OutStreamer->emitInstruction(RET_ADDR, getSubtargetInfo());
@@ -2664,6 +2689,7 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
     OutStreamer->emitInstruction(SUB, getSubtargetInfo());
     OutStreamer->emitInstruction(POP, getSubtargetInfo()); 
     OutStreamer->emitInstruction(JMP, getSubtargetInfo()); 
+    //OutStreamer->emitInstruction(TmpInst, getSubtargetInfo()); 
   }else{
     //this is the first instr of the function need to save return addr to R14
     // auto I = MI->getMF()->front().getFirstNonDebugInstr();
