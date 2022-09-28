@@ -532,6 +532,7 @@ BitVector X86RegisterInfo::getReservedRegs(const MachineFunction &MF) const {
 
   Reserved.set(X86::R15);
   Reserved.set(X86::R15D);
+  Reserved.set(X86::R15BH);
 
   // Set the floating point control register as reserved.
   Reserved.set(X86::FPCW);
