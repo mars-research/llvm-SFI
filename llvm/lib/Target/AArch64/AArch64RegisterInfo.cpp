@@ -317,6 +317,8 @@ AArch64RegisterInfo::getReservedRegs(const MachineFunction &MF) const {
 
   // FIXME: avoid re-calculating this every time.
   BitVector Reserved(getNumRegs());
+  markSuperRegs(Reserved, AArch64::X28); //reserved for tags;
+  markSuperRegs(Reserved, AArch64::X27); //reserved for sp;
   markSuperRegs(Reserved, AArch64::WSP);
   markSuperRegs(Reserved, AArch64::WZR);
 
