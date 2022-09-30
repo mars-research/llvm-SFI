@@ -5781,6 +5781,8 @@ bool AArch64AsmParser::MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
   switch (MatchResult) {
   case Match_Success: {
     // Perform range checking and other semantic validations
+    errs()<<"found a inline asm";
+    Inst.print(errs());
     SmallVector<SMLoc, 8> OperandLocs;
     NumOperands = Operands.size();
     for (unsigned i = 1; i < NumOperands; ++i)

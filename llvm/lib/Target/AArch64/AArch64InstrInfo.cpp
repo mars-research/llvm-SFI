@@ -3071,7 +3071,8 @@ bool AArch64InstrInfo::getMemOpInfo(unsigned Opcode, TypeSize &Scale,
 int AArch64InstrInfo::getMemScale(unsigned Opc) {
   switch (Opc) {
   default:
-    llvm_unreachable("Opcode has unknown scale!");
+    //llvm_unreachable("Opcode has unknown scale!");
+    return -1; //heck this is for testing if a op is ld/st.
   case AArch64::LDRBBui:
   case AArch64::LDURBBi:
   case AArch64::LDRSBWui:
@@ -3139,6 +3140,56 @@ int AArch64InstrInfo::getMemScale(unsigned Opc) {
     return 16;
   }
 }
+
+bool AArch64InstrInfo::isPairLdSt(const MachineInstr &MI) {
+  switch (MI.getOpcode()) {
+  default:
+    return false;
+  case AArch64::LDNPDi:
+  case AArch64::LDNPQi:
+  case AArch64::LDNPSi:
+  case AArch64::LDNPWi:
+  case AArch64::LDNPXi:
+  case AArch64::LDPDi:
+  case AArch64::LDPDpost:
+  case AArch64::LDPDpre:
+  case AArch64::LDPQi:
+  case AArch64::LDPQpost:
+  case AArch64::LDPQpre:
+  case AArch64::LDPSWi:
+  case AArch64::LDPSWpost:
+  case AArch64::LDPSWpre:
+  case AArch64::LDPSi:
+  case AArch64::LDPSpost:
+  case AArch64::LDPSpre:
+  case AArch64::LDPWi:
+  case AArch64::LDPWpost:
+  case AArch64::LDPWpre:
+  case AArch64::LDPXi:
+  case AArch64::LDPXpost:
+  case AArch64::LDPXpre:
+    return true;
+  case AArch64::STNPDi:
+  case AArch64::STNPQi:
+  case AArch64::STNPXi:
+  case AArch64::STPDi:
+  case AArch64::STPDpost:
+  case AArch64::STPDpre:
+  case AArch64::STPQi:
+  case AArch64::STPQpost:
+  case AArch64::STPQpre:
+  case AArch64::STPSpost:
+  case AArch64::STPSpre:
+  case AArch64::STPWpost:
+  case AArch64::STPWpre:
+  case AArch64::STPXi:
+  case AArch64::STPXpost:
+  case AArch64::STPXpre:
+  case AArch64::STPSi:
+  case AArch64::STPWi:
+    return true;
+  }
+  }
 
 bool AArch64InstrInfo::isPreLd(const MachineInstr &MI) {
   switch (MI.getOpcode()) {

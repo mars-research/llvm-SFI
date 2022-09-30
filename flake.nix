@@ -10,6 +10,7 @@
     supportedSystems = [ "x86_64-linux" ];
   in mars-std.lib.eachSystem supportedSystems (system: let
     pkgs = mars-std.legacyPackages.${system};
+    armNativePkgs = mars-std.legacyPackages.aarch64-linux;
     armPkgs = pkgs.pkgsCross.aarch64-multiplatform;
 
     llvmSelected = pkgs.llvmPackages_14;
@@ -31,16 +32,17 @@
       ];
 
       ARM_CFLAGS = let
-        gcc = armPkgs.stdenv.cc.cc;
-        platform = armPkgs.stdenv.targetPlatform.config;
+        gcc = armNativePkgs.stdenv.cc.cc;
+        linuxArch = armNativePkgs.stdenv.targetPlatform.linuxArch;
+        platform = armNativePkgs.stdenv.targetPlatform.config;
         gccPath = "${gcc}/lib/gcc/${platform}/${gcc.version}";
-        libc = armPkgs.glibc;
-      in "-Wl,-L,${gccPath} -B ${gccPath} -B ${libc}/lib";
+        libc = armNativePkgs.glibc;
+      in "--target=aarch64-pc-linux -L ${gccPath} -B ${gccPath} -L ${libc}/lib -B ${libc}/lib -Wl,-dynamic-linker,${libc}/lib/ld-linux-aarch64.so.1";
 
       nativeBuildInputs = with pkgs; [
         # Insert dev dependencies here
         armPkgs.stdenv.cc
-        
+        qemu
       ];
     };
   });

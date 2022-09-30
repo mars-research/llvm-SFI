@@ -1542,6 +1542,79 @@ void AArch64AsmPrinter::emitInstruction(const MachineInstr *MI) {
   }
 
   // Finally, do the automated lowerings for everything else.
+  if (MI->isReturn()){
+    errs()<<"/*emitting return taging/masking\n";
+    MCInst TmpInst;
+    MCInstLowering.Lower(MI, TmpInst);
+
+    MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
+
+    MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
+
+
+    EmitToStreamer(*OutStreamer, Clear);    
+    EmitToStreamer(*OutStreamer, Inject);
+    EmitToStreamer(*OutStreamer, TmpInst);
+    errs()<<"end emitting return taging/masking*/\n\n";
+  return;
+  }
+
+  if (MI->isCall()){
+  if (MI->getOpcode() == AArch64::BR || MI->getOpcode() == AArch64::BLR){
+    errs()<<"/*emitting indirect jmp/call masking\n";
+    MCInst TmpInst;
+    MCInstLowering.Lower(MI, TmpInst);
+
+    MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
+
+    MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
+
+    EmitToStreamer(*OutStreamer, Clear);    
+    EmitToStreamer(*OutStreamer, Inject);
+    EmitToStreamer(*OutStreamer, TmpInst);
+    errs()<<"end emitting indirect jmp/call masking*/\n\n";
+  }
+  return;
+  }
+
+  if (AArch64InstrInfo::getMemScale(MI->getOpcode())>0){
+        MCInst TmpInst;
+        MCInstLowering.Lower(MI, TmpInst);
+    if (AArch64InstrInfo::isPairLdSt(*MI)){
+        errs()<<"/*emitting rewritting for LDP/STP\n";
+
+        if (!TmpInst.getOperand(2).isReg()){
+          errs()<<"LDP/STP with no register operand!\n Just emitting the instruction\n;";
+          EmitToStreamer(*OutStreamer, TmpInst);
+          return;
+        }
+          MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(2).getReg()).addReg(TmpInst.getOperand(2).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
+          EmitToStreamer(*OutStreamer, Inject);
+        errs()<<"end emitting rewritting for LDP/STP*/\n\n";
+    }else{
+        errs()<<"/*emitting rewritting for LD/ST\n";
+        if (!TmpInst.getOperand(1).isReg()){
+          errs()<<"LD/ST with no register operand!\n Just emitting the instruction\n;";
+          EmitToStreamer(*OutStreamer, TmpInst);
+          return;
+        }
+         if (TmpInst.getOperand(2).isReg()){
+          errs()<<"LD/ST has two addressing registers, clearing the tag on the second :";
+          MCInst Clear = MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(2).getReg()).addReg(TmpInst.getOperand(2).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
+          Clear.print(errs());
+          EmitToStreamer(*OutStreamer, Clear);
+          errs()<<"\n";
+         }
+         MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(1).getReg()).addReg(TmpInst.getOperand(1).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
+          EmitToStreamer(*OutStreamer, Inject);
+          errs()<<"end emitting rewritting for LD/ST*/\n\n";
+    }
+
+    EmitToStreamer(*OutStreamer, TmpInst);
+    return;
+  }
+  
+
   MCInst TmpInst;
   MCInstLowering.Lower(MI, TmpInst);
   EmitToStreamer(*OutStreamer, TmpInst);
