@@ -112,6 +112,7 @@ raw_ostream &MCStreamer::GetCommentOS() {
   return nulls();
 }
 
+
 unsigned MCStreamer::getNumFrameInfos() { return DwarfFrameInfos.size(); }
 ArrayRef<MCDwarfFrameInfo> MCStreamer::getDwarfFrameInfos() const {
   return DwarfFrameInfos;

@@ -1132,6 +1132,17 @@ public:
 
   /// Do finalization for the streamer at the end of a section.
   virtual void doFinalizationAtSectionEnd(MCSection *Section) {}
+
+public:
+  std::vector<MCInst> MCInst_Buffer;
+  std::vector<MCSubtargetInfo> MCSubtargetInfo_Buffer;
+  int MCInst_Buffer_len = 0;
+  int NaCl_Align_Counter = 16;
+  virtual void reset_align_counter(){NaCl_Align_Counter=16;}; 
+  bool is_bundling = false;
+  virtual void bundling_start(){is_bundling = true;};
+  virtual void bundling_end(){errs()<<"bad bundling_end \n";};
+
 };
 
 /// Create a dummy machine code streamer, which does nothing. This is useful for

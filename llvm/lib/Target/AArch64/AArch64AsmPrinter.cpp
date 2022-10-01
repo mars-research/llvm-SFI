@@ -1543,6 +1543,7 @@ void AArch64AsmPrinter::emitInstruction(const MachineInstr *MI) {
 
   // Finally, do the automated lowerings for everything else.
   if (MI->isReturn()){
+    OutStreamer->bundling_start();
     errs()<<"/*emitting return taging/masking\n";
     MCInst TmpInst;
     MCInstLowering.Lower(MI, TmpInst);
@@ -1555,15 +1556,21 @@ void AArch64AsmPrinter::emitInstruction(const MachineInstr *MI) {
     EmitToStreamer(*OutStreamer, Clear);    
     EmitToStreamer(*OutStreamer, Inject);
     EmitToStreamer(*OutStreamer, TmpInst);
+    OutStreamer->bundling_end();    
     errs()<<"end emitting return taging/masking*/\n\n";
   return;
   }
 
   if (MI->isCall()){
-  if (MI->getOpcode() == AArch64::BR || MI->getOpcode() == AArch64::BLR){
-    errs()<<"/*emitting indirect jmp/call masking\n";
     MCInst TmpInst;
     MCInstLowering.Lower(MI, TmpInst);
+  if (MI->getOpcode() == AArch64::BR || MI->getOpcode() == AArch64::BLR){
+    //OutStreamer->bundling_start();
+    if (OutStreamer->NaCl_Align_Counter != 12){
+      OutStreamer->emitCodeAlignment(16,&getSubtargetInfo());
+      emitNops(1);
+    }
+    errs()<<"/*emitting indirect jmp/call masking\n";
 
     MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
 
@@ -1572,45 +1579,76 @@ void AArch64AsmPrinter::emitInstruction(const MachineInstr *MI) {
     EmitToStreamer(*OutStreamer, Clear);    
     EmitToStreamer(*OutStreamer, Inject);
     EmitToStreamer(*OutStreamer, TmpInst);
+    //OutStreamer->bundling_end();    
     errs()<<"end emitting indirect jmp/call masking*/\n\n";
+  }else{
+    errs()<<"/*emitting jmp/call padding\n";
+    while (OutStreamer->NaCl_Align_Counter != 4){
+      emitNops(1);
+    }
+    EmitToStreamer(*OutStreamer, TmpInst);
+    errs()<<"end emitting jmp/call padding*/\n\n";
   }
   return;
   }
 
-  if (AArch64InstrInfo::getMemScale(MI->getOpcode())>0){
+  if (AArch64InstrInfo::isLdSt(*MI)){
+    OutStreamer->bundling_start();
         MCInst TmpInst;
         MCInstLowering.Lower(MI, TmpInst);
     if (AArch64InstrInfo::isPairLdSt(*MI)){
         errs()<<"/*emitting rewritting for LDP/STP\n";
 
-        if (!TmpInst.getOperand(2).isReg()){
+        int op_idx; 
+        if (AArch64InstrInfo::isUpdateLdSt(*MI)){
+          op_idx = 3;
+        }else{
+          op_idx = 2;
+        }
+
+        if (!TmpInst.getOperand(op_idx).isReg()){
           errs()<<"LDP/STP with no register operand!\n Just emitting the instruction\n;";
           EmitToStreamer(*OutStreamer, TmpInst);
           return;
         }
-          MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(2).getReg()).addReg(TmpInst.getOperand(2).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
+          MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
           EmitToStreamer(*OutStreamer, Inject);
-        errs()<<"end emitting rewritting for LDP/STP*/\n\n";
+          EmitToStreamer(*OutStreamer, TmpInst);
+          OutStreamer->bundling_end();
+          errs()<<"end emitting rewritting for LDP/STP*/\n\n";
+          return;
     }else{
         errs()<<"/*emitting rewritting for LD/ST\n";
-        if (!TmpInst.getOperand(1).isReg()){
+
+        int op_idx; 
+        if (AArch64InstrInfo::isUpdateLdSt(*MI)){
+          op_idx = 2;
+        }else{
+          op_idx = 1;
+        }
+
+        if (!TmpInst.getOperand(op_idx).isReg()){
           errs()<<"LD/ST with no register operand!\n Just emitting the instruction\n;";
           EmitToStreamer(*OutStreamer, TmpInst);
           return;
         }
-         if (TmpInst.getOperand(2).isReg()){
+         if (TmpInst.getOperand(op_idx+1).isReg()){
           errs()<<"LD/ST has two addressing registers, clearing the tag on the second :";
-          MCInst Clear = MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(2).getReg()).addReg(TmpInst.getOperand(2).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
+          MCInst Clear = MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx+1).getReg()).addReg(TmpInst.getOperand(op_idx+1).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
           Clear.print(errs());
           EmitToStreamer(*OutStreamer, Clear);
           errs()<<"\n";
          }
-         MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(1).getReg()).addReg(TmpInst.getOperand(1).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
+         MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
           EmitToStreamer(*OutStreamer, Inject);
+          EmitToStreamer(*OutStreamer, TmpInst);
+          OutStreamer->bundling_end();
           errs()<<"end emitting rewritting for LD/ST*/\n\n";
+          return;
     }
 
     EmitToStreamer(*OutStreamer, TmpInst);
+    OutStreamer->bundling_end();
     return;
   }
   

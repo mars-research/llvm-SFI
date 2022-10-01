@@ -1277,9 +1277,13 @@ void AsmPrinter::emitFunctionBody() {
   bool CanDoExtraAnalysis = ORE->allowExtraAnalysis(DEBUG_TYPE);
   for (auto &MBB : *MF) {
     // Print a label for the basic block.
+    OutStreamer->emitCodeAlignment(16,&getSubtargetInfo());
+    OutStreamer->reset_align_counter();
+
     emitBasicBlockStart(MBB);
     DenseMap<StringRef, unsigned> MnemonicCounts;
     for (auto &MI : MBB) {
+      //MI.print(errs());
       // Print the assembly for the instruction.
       if (!MI.isPosition() && !MI.isImplicitDef() && !MI.isKill() &&
           !MI.isDebugInstr()) {

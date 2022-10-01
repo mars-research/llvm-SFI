@@ -94,7 +94,11 @@ public:
     return getMemScale(MI.getOpcode());
   }
 
+  static bool isUpdateLdSt(const MachineInstr &MI);
+
   static bool isPairLdSt(const MachineInstr &MI);
+
+  static bool isLdSt(const MachineInstr &MI);
 
   /// Returns whether the instruction is a pre-indexed load.
   static bool isPreLd(const MachineInstr &MI);

@@ -48,6 +48,23 @@ MCAssembler *MCObjectStreamer::getAssemblerPtr() {
   return nullptr;
 }
 
+void MCObjectStreamer::bundling_end(){
+    is_bundling = false;
+  if (MCInst_Buffer_len*4 > NaCl_Align_Counter){
+    emitCodeAlignment(16,&MCSubtargetInfo_Buffer[0]);
+    reset_align_counter();
+  }
+  for(unsigned long i = 0; i < MCInst_Buffer.size(); i++) {
+      errs()<<"emitting a MCInst :";
+      MCInst_Buffer[i].print(errs());
+      errs()<<"\n";
+      emitInstruction(MCInst_Buffer[i],MCSubtargetInfo_Buffer[i]);
+  }
+  MCInst_Buffer.clear();
+  MCSubtargetInfo_Buffer.clear();
+    MCInst_Buffer_len = 0;
+    }
+
 void MCObjectStreamer::addPendingLabel(MCSymbol* S) {
   MCSection *CurSection = getCurrentSectionOnly();
   if (CurSection) {
@@ -409,6 +426,22 @@ bool MCObjectStreamer::mayHaveInstructions(MCSection &Sec) const {
 
 void MCObjectStreamer::emitInstruction(const MCInst &Inst,
                                        const MCSubtargetInfo &STI) {
+
+  if(MCStreamer::is_bundling){
+    errs()<<"buffering a MCInst :";
+    Inst.print(errs());
+    errs()<<"\n";
+    MCInst_Buffer_len += 1;
+    MCInst_Buffer.push_back(Inst);
+    MCSubtargetInfo_Buffer.push_back(STI);
+    return;
+  }
+  NaCl_Align_Counter -= 4;
+  if(NaCl_Align_Counter <4){
+    reset_align_counter();
+  }
+
+
   const MCSection &Sec = *getCurrentSectionOnly();
   if (Sec.isVirtualSection()) {
     getContext().reportError(Inst.getLoc(), Twine(Sec.getVirtualSectionKind()) +

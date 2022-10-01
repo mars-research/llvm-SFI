@@ -224,6 +224,9 @@ public:
   /// Emits pending conditional assignments that depend on \p Symbol
   /// being emitted.
   void emitPendingAssignments(MCSymbol *Symbol);
+
+  public:
+    void bundling_end() override;
 };
 
 } // end namespace llvm

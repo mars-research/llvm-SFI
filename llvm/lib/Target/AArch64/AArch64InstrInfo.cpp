@@ -3141,6 +3141,39 @@ int AArch64InstrInfo::getMemScale(unsigned Opc) {
   }
 }
 
+bool AArch64InstrInfo::isUpdateLdSt(const MachineInstr &MI){
+  if(isPairLdSt(MI)){
+    if(MI.getOperand(3).isReg()){
+      return true;
+    }else{
+      return false;
+    }
+  }else{
+    if(MI.getOperand(2).isReg()){
+      return true;
+    }else{
+      return false;
+    }
+  }
+}
+
+bool AArch64InstrInfo::isLdSt(const MachineInstr &MI){
+  if(isPairLdSt(MI)){
+    return true;
+  }
+  if(isPreLdSt(MI)){
+    return true;
+  }
+  if(isPairableLdStInst(MI)){
+    return true;
+  }
+
+  if(getMemScale(MI.getOpcode())>0){
+    return true;
+  }
+  return false;
+}
+
 bool AArch64InstrInfo::isPairLdSt(const MachineInstr &MI) {
   switch (MI.getOpcode()) {
   default:
