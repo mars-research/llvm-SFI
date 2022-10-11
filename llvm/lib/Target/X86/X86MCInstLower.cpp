@@ -2698,7 +2698,7 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
      if(MI->getOpcode() == X86::CALL64r){
         errs()<<MI->getOperand(0).getReg()<<"\n";
          MCInst Masking_1 = MCInstBuilder(X86::AND64ri32).addReg(MI->getOperand(0).getReg()).addReg(MI->getOperand(0).getReg()).addOperand(MCOperand::createImm(0xFFFFFFFF)).addReg(X86::NoRegister);
-         MCInst Masking_2 = MCInstBuilder(X86::OR64rr).addReg(X86::NoRegister).addReg(MI->getOperand(0).getReg()).addReg(X86::R15);
+         MCInst Masking_2 = MCInstBuilder(X86::OR64rr).addReg(X86::NoRegister).addReg(MI->getOperand(0).getReg()).addReg(MI->getOperand(0).getReg());
         
          int total_len = NaClAT.GetInstEncodingLen(Masking_1, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
          total_len += NaClAT.GetInstEncodingLen(Masking_2, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
