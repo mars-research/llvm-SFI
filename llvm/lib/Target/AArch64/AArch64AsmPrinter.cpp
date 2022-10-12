@@ -1568,12 +1568,12 @@ auto MI_first = MBB.getFirstNonDebugInstr();
     MCInst TmpInst;
     MCInstLowering.Lower(MI, TmpInst);
 
-    MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
+    //MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
 
-    MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
+    //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
 
-    //MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
-    //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(63));
+    MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
+    MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(63));
 
     EmitToStreamer(*OutStreamer, Clear);    
     EmitToStreamer(*OutStreamer, Inject);
@@ -1603,13 +1603,13 @@ auto MI_first = MBB.getFirstNonDebugInstr();
     }
     errs()<<"/*emitting indirect jmp/call masking\n";
 
-    MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
+    //MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
 
-    MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
+    //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
 
-    //MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
+    MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
 
-    //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(63));
+    MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(63));
 
 
     EmitToStreamer(*OutStreamer, Clear);    
@@ -1652,8 +1652,8 @@ auto MI_first = MBB.getFirstNonDebugInstr();
           EmitToStreamer(*OutStreamer, TmpInst);
           return;
         }
-          MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
-          //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
+          //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
+          MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addOperand(MCOperand::createImm(1)).addOperand(MCOperand::createImm(0));
           EmitToStreamer(*OutStreamer, Inject);
           EmitToStreamer(*OutStreamer, TmpInst);
           OutStreamer->bundling_end();
@@ -1682,8 +1682,8 @@ auto MI_first = MBB.getFirstNonDebugInstr();
           // EmitToStreamer(*OutStreamer, Clear);
           errs()<<"\n";
          }
-         MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
-        //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
+          //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
+          MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addOperand(MCOperand::createImm(1)).addOperand(MCOperand::createImm(0));
           EmitToStreamer(*OutStreamer, Inject);
           EmitToStreamer(*OutStreamer, TmpInst);
           OutStreamer->bundling_end();
