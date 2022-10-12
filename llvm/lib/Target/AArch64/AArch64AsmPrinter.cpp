@@ -1546,34 +1546,34 @@ const MachineFunction * MF = MI->getMF();
 const MachineBasicBlock &MBB =  MF->front();
 auto MI_first = MBB.getFirstNonDebugInstr();
   //this is for testing
-  if(*MI == MI_first){
-    errs()<<"/*emitting function enter fake SP sync code should be disabled for real test!\n";
-    MCInst Sync =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::SP).addReg(AArch64::X27).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
-    Sync.print(errs());
-    EmitToStreamer(*OutStreamer, Sync);    
-    errs()<<"end emitting fake SP sync code */ \n\n";
-  }
+  // if(*MI == MI_first){
+  //   errs()<<"/*emitting function enter fake SP sync code should be disabled for real test!\n";
+  //   MCInst Sync =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::SP).addReg(AArch64::X27).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
+  //   Sync.print(errs());
+  //   EmitToStreamer(*OutStreamer, Sync);    
+  //   errs()<<"end emitting fake SP sync code */ \n\n";
+  // }
 
   // Finally, do the automated lowerings for everything else.
   if (MI->isReturn()){
         //this is for testing
-    errs()<<"/*emitting function ret fake SP sync code should be disabled for real test!\n";
-    MCInst Sync =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::X27).addReg(AArch64::SP).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
-    Sync.print(errs());
-    EmitToStreamer(*OutStreamer, Sync);    
-    errs()<<"\nend emitting fake SP sync code */ \n\n";
+    // errs()<<"/*emitting function ret fake SP sync code should be disabled for real test!\n";
+    // MCInst Sync =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::X27).addReg(AArch64::SP).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
+    // Sync.print(errs());
+    // EmitToStreamer(*OutStreamer, Sync);    
+    // errs()<<"\nend emitting fake SP sync code */ \n\n";
 
     OutStreamer->bundling_start();
     errs()<<"/*emitting return taging/masking\n";
     MCInst TmpInst;
     MCInstLowering.Lower(MI, TmpInst);
 
-    //MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
+    MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
 
-    //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
+    MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
 
-    MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
-    MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(63));
+    //MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
+    //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(63));
 
     EmitToStreamer(*OutStreamer, Clear);    
     EmitToStreamer(*OutStreamer, Inject);
@@ -1590,11 +1590,11 @@ auto MI_first = MBB.getFirstNonDebugInstr();
     MCInstLowering.Lower(MI, TmpInst);
 
     //this is for testing
-    errs()<<"/*emitting function before fake SP sync code should be disabled for real test!\n";
-    MCInst Sync =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::X27).addReg(AArch64::SP).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
-    Sync.print(errs());
-    EmitToStreamer(*OutStreamer, Sync);    
-    errs()<<"\nend emitting fake SP sync code */ \n\n";
+    // errs()<<"/*emitting function before fake SP sync code should be disabled for real test!\n";
+    // MCInst Sync =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::X27).addReg(AArch64::SP).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
+    // Sync.print(errs());
+    // EmitToStreamer(*OutStreamer, Sync);    
+    // errs()<<"\nend emitting fake SP sync code */ \n\n";
   if (MI->getOpcode() == AArch64::BR || MI->getOpcode() == AArch64::BLR){
     //OutStreamer->bundling_start();
     if (OutStreamer->NaCl_Align_Counter != 12){
@@ -1603,13 +1603,13 @@ auto MI_first = MBB.getFirstNonDebugInstr();
     }
     errs()<<"/*emitting indirect jmp/call masking\n";
 
-//    MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
+    MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
 
-//    MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
+    MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
 
-    MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
+    //MCInst Clear =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(3));
 
-    MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(63));
+    //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addReg(TmpInst.getOperand(0).getReg()).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(63));
 
 
     EmitToStreamer(*OutStreamer, Clear);    
@@ -1625,11 +1625,11 @@ auto MI_first = MBB.getFirstNonDebugInstr();
     EmitToStreamer(*OutStreamer, TmpInst);
     errs()<<"end emitting jmp/call padding*/\n\n";
   }
-    errs()<<"/*emitting after call fake SP sync code should be disabled for real test!\n";
-    MCInst Sync1 =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::SP).addReg(AArch64::X27).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
-    Sync1.print(errs());
-    EmitToStreamer(*OutStreamer, Sync1);    
-    errs()<<"\nend emitting fake SP sync code */ \n\n";
+    // errs()<<"/*emitting after call fake SP sync code should be disabled for real test!\n";
+    // MCInst Sync1 =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::SP).addReg(AArch64::X27).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
+    // Sync1.print(errs());
+    // EmitToStreamer(*OutStreamer, Sync1);    
+    // errs()<<"\nend emitting fake SP sync code */ \n\n";
   return;
   }
 
@@ -1652,8 +1652,8 @@ auto MI_first = MBB.getFirstNonDebugInstr();
           EmitToStreamer(*OutStreamer, TmpInst);
           return;
         }
-          //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
-          MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
+          MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
+          //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
           EmitToStreamer(*OutStreamer, Inject);
           EmitToStreamer(*OutStreamer, TmpInst);
           OutStreamer->bundling_end();
@@ -1675,15 +1675,15 @@ auto MI_first = MBB.getFirstNonDebugInstr();
           return;
         }
          if (TmpInst.getOperand(op_idx+1).isReg()){
-          errs()<<"LD/ST has two addressing registers, clearing the tag on the second :";
+          errs()<<"LD/ST has two addressing registers, don't know what to do with it for now\n";
           //MCInst Clear = MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx+1).getReg()).addReg(TmpInst.getOperand(op_idx+1).getReg()).addReg(AArch64::WZR).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
-          MCInst Clear = MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx+1).getReg()).addReg(TmpInst.getOperand(op_idx+1).getReg()).addReg(TmpInst.getOperand(op_idx+1).getReg()).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
-          Clear.print(errs());
-          EmitToStreamer(*OutStreamer, Clear);
+          // MCInst Clear = MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx+1).getReg()).addReg(TmpInst.getOperand(op_idx+1).getReg()).addReg(TmpInst.getOperand(op_idx+1).getReg()).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
+          // Clear.print(errs());
+          // EmitToStreamer(*OutStreamer, Clear);
           errs()<<"\n";
          }
-         //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
-          MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
+         MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(AArch64::X28).addOperand(MCOperand::createImm(32)).addOperand(MCOperand::createImm(31));
+        //MCInst Inject =  MCInstBuilder(AArch64::BFMXri).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addReg(TmpInst.getOperand(op_idx).getReg()).addOperand(MCOperand::createImm(4)).addOperand(MCOperand::createImm(3));
           EmitToStreamer(*OutStreamer, Inject);
           EmitToStreamer(*OutStreamer, TmpInst);
           OutStreamer->bundling_end();
