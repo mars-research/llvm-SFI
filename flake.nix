@@ -37,7 +37,7 @@
         platform = armNativePkgs.stdenv.targetPlatform.config;
         gccPath = "${gcc}/lib/gcc/${platform}/${gcc.version}";
         libc = armNativePkgs.glibc;
-      in "--target=aarch64-pc-linux -nostdinc -I ${libc.dev}/include -L ${gccPath} -B ${gccPath} -L ${libc}/lib -B ${libc}/lib -Wl,-dynamic-linker,${libc}/lib/ld-linux-aarch64.so.1";
+      in "--target=aarch64-pc-linux -I ${libc.dev}/include -L ${gccPath} -B ${gccPath} -L ${libc}/lib -B ${libc}/lib -Wl,-dynamic-linker,${libc}/lib/ld-linux-aarch64.so.1";
 
       nativeBuildInputs = with pkgs; [
         # Insert dev dependencies here
