@@ -378,9 +378,9 @@ void MCObjectStreamer::bundling_end() {
     reset_counter();
   }
   for(unsigned long i = 0; i < MCInst_Buffer.size(); i++) {
-      errs()<<"emitting a MCInst :";
-      MCInst_Buffer[i].print(errs());
-      errs()<<"\n";
+      //errs()<<"emitting a MCInst :";
+      //MCInst_Buffer[i].print(errs());
+      //errs()<<"\n";
       emitInstruction(MCInst_Buffer[i],MCSubtargetInfo_Buffer[i]);
   }
   MCInst_Buffer.clear();

@@ -2689,16 +2689,16 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
   MCInst TmpInst;
   MCInstLowering.Lower(MI, TmpInst);
   if(TmpInst.getOpcode() == X86::JCC_1){
-    errs()<<"gotcha bitch!\n";
-    MI->print(errs());
-    errs()<<"\n";
-      errs()<<"before change :";
-    TmpInst.print(errs());
-    errs()<<"\n";
+    //errs()<<"gotcha bitch!\n";
+    //MI->print(errs());
+    //errs()<<"\n";
+    //  errs()<<"before change :";
+    //TmpInst.print(errs());
+    //errs()<<"\n";
     TmpInst.setOpcode(X86::JCC_2);
-    errs()<<"after change :";
-    TmpInst.print(errs());
-    errs()<<"\n";
+    //errs()<<"after change :";
+    //TmpInst.print(errs());
+    //errs()<<"\n";
      EmitAndCountInstruction(TmpInst);
     return;
   }
@@ -2750,7 +2750,7 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
       len += NaClAT.GetInstEncodingLen(Masking_2, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
       len += NaClAT.GetInstEncodingLen(JMP, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
       len += NaClAT.GetInstEncodingLen(TmpInst, getSubtargetInfo(), CodeEmitter.get(),*OutStreamer);
-      errs()<<"total ret len: "<< len<<"\n";
+      //errs()<<"total ret len: "<< len<<"\n";
         if (OutStreamer->Remaining_byte < len){
           OutStreamer->emitCodeAlignment(32);
           OutStreamer->reset_counter();
