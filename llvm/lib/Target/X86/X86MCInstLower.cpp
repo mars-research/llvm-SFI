@@ -2688,7 +2688,20 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
 
   MCInst TmpInst;
   MCInstLowering.Lower(MI, TmpInst);
-
+  if(TmpInst.getOpcode() == X86::JCC_1){
+    errs()<<"gotcha bitch!\n";
+    MI->print(errs());
+    errs()<<"\n";
+      errs()<<"before change :";
+    TmpInst.print(errs());
+    errs()<<"\n";
+    TmpInst.setOpcode(X86::JCC_2);
+    errs()<<"after change :";
+    TmpInst.print(errs());
+    errs()<<"\n";
+     EmitAndCountInstruction(TmpInst);
+    return;
+  }
   // Stackmap shadows cannot include branch targets, so we can count the bytes
   // in a call towards the shadow, but must ensure that the no thread returns
   // in to the stackmap shadow.  The only way to achieve this is if the call
