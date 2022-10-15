@@ -2688,6 +2688,12 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
 
   MCInst TmpInst;
   MCInstLowering.Lower(MI, TmpInst);
+  // if(TmpInst.getOpcode() == X86::JCC_1 || TmpInst.getOpcode() == X86::JCC_2 ||TmpInst.getOpcode() == X86::JCC_4){
+  //   errs()<<"gotcha bitch!\n";
+  //   MI->print(errs());
+
+  //   errs()<<"\n";
+  // }
   if(TmpInst.getOpcode() == X86::JCC_1){
     //errs()<<"gotcha bitch!\n";
     //MI->print(errs());
@@ -2695,7 +2701,7 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
     //  errs()<<"before change :";
     //TmpInst.print(errs());
     //errs()<<"\n";
-    TmpInst.setOpcode(X86::JCC_2);
+    TmpInst.setOpcode(X86::JCC_4);
     //errs()<<"after change :";
     //TmpInst.print(errs());
     //errs()<<"\n";
