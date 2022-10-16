@@ -2647,16 +2647,16 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
            errs()<<"not emitting shadow stack for SXFI_checks\n"; //debug log (delete);
            return;
         }
-        // only use it if linking with unmodified libc
-        //      const MCSymbolRefExpr::VariantKind Kind = SRE.getKind();
-        //  if (Kind != MCSymbolRefExpr::VK_None) {
-        //    errs()<<"MCSymbolRefExpr::getVariantKindName(Kind) \n"<<MCSymbolRefExpr::getVariantKindName(Kind)<<"\n";
-        //      if (MCSymbolRefExpr::getVariantKindName(Kind)=="PLT"){
-        //        OutStreamer->emitInstruction(TmpInst, getSubtargetInfo());
-        //      errs()<<"not emitting shadow stack for libc\n"; //tmp change (delete);
-        //        return;
-        //    }
-        //  }
+        //only use it if linking with unmodified libc
+              const MCSymbolRefExpr::VariantKind Kind = SRE.getKind();
+          if (Kind != MCSymbolRefExpr::VK_None) {
+            errs()<<"MCSymbolRefExpr::getVariantKindName(Kind) \n"<<MCSymbolRefExpr::getVariantKindName(Kind)<<"\n";
+              if (MCSymbolRefExpr::getVariantKindName(Kind)=="PLT"){
+                OutStreamer->emitInstruction(TmpInst, getSubtargetInfo());
+              errs()<<"not emitting shadow stack for libc\n"; //tmp change (delete);
+                return;
+            }
+          }
       }
     }
 
@@ -2680,6 +2680,11 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
   }
 
   if(MI->isReturn()){
+    if (MI->getMF()->getName() == "sxfi_capability_check"){
+       errs()<<"not emitting shadow stack for SXFI_checks\n";
+       EmitAndCountInstruction(TmpInst);
+       return;
+    }
     MCInst MOV = MCInstBuilder(X86::MOV64rm).addReg(X86::RDX).addReg(X86::R14).addImm(1).addReg(X86::NoRegister).addImm(0).addReg(X86::NoRegister);
     MCInst SUB = MCInstBuilder(X86::SUB64ri8).addReg(X86::R14).addReg(X86::R14).addOperand(MCOperand::createImm(0x8));
     MCInst POP = MCInstBuilder(X86::POP64r).addReg(X86::RDX);
