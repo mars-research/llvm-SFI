@@ -1547,21 +1547,21 @@ const MachineBasicBlock &MBB =  MF->front();
 auto MI_first = MBB.getFirstNonDebugInstr();
   //this is for testing
   if(*MI == MI_first){
-    errs()<<"/*emitting function enter fake SP sync code should be disabled for real test!\n";
-    MCInst Sync =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::SP).addReg(AArch64::X27).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
-    Sync.print(errs());
-    EmitToStreamer(*OutStreamer, Sync);    
-    errs()<<"end emitting fake SP sync code */ \n\n";
+    // errs()<<"/*emitting function enter fake SP sync code should be disabled for real test!\n";
+    // MCInst Sync =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::SP).addReg(AArch64::X27).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
+    // Sync.print(errs());
+    // EmitToStreamer(*OutStreamer, Sync);    
+    // errs()<<"end emitting fake SP sync code */ \n\n";
   }
 
   // Finally, do the automated lowerings for everything else.
   if (MI->isReturn()){
         //this is for testing
-    errs()<<"/*emitting function ret fake SP sync code should be disabled for real test!\n";
-    MCInst Sync =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::X27).addReg(AArch64::SP).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
-    Sync.print(errs());
-    EmitToStreamer(*OutStreamer, Sync);    
-    errs()<<"\nend emitting fake SP sync code */ \n\n";
+    // errs()<<"/*emitting function ret fake SP sync code should be disabled for real test!\n";
+    // MCInst Sync =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::X27).addReg(AArch64::SP).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
+    // Sync.print(errs());
+    // EmitToStreamer(*OutStreamer, Sync);    
+    // errs()<<"\nend emitting fake SP sync code */ \n\n";
 
     OutStreamer->bundling_start();
     errs()<<"/*emitting return taging/masking\n";
@@ -1589,12 +1589,12 @@ auto MI_first = MBB.getFirstNonDebugInstr();
     MCInst TmpInst;
     MCInstLowering.Lower(MI, TmpInst);
 
-    //this is for testing
-    errs()<<"/*emitting function before fake SP sync code should be disabled for real test!\n";
-    MCInst Sync =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::X27).addReg(AArch64::SP).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
-    Sync.print(errs());
-    EmitToStreamer(*OutStreamer, Sync);    
-    errs()<<"\nend emitting fake SP sync code */ \n\n";
+    // //this is for testing
+    // errs()<<"/*emitting function before fake SP sync code should be disabled for real test!\n";
+    // MCInst Sync =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::X27).addReg(AArch64::SP).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
+    // Sync.print(errs());
+    // EmitToStreamer(*OutStreamer, Sync);    
+    // errs()<<"\nend emitting fake SP sync code */ \n\n";
   if (MI->getOpcode() == AArch64::BR || MI->getOpcode() == AArch64::BLR){
     //OutStreamer->bundling_start();
     if (OutStreamer->NaCl_Align_Counter != 12){
@@ -1625,11 +1625,11 @@ auto MI_first = MBB.getFirstNonDebugInstr();
     EmitToStreamer(*OutStreamer, TmpInst);
     errs()<<"end emitting jmp/call padding*/\n\n";
   }
-    errs()<<"/*emitting after call fake SP sync code should be disabled for real test!\n";
-    MCInst Sync1 =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::SP).addReg(AArch64::X27).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
-    Sync1.print(errs());
-    EmitToStreamer(*OutStreamer, Sync1);    
-    errs()<<"\nend emitting fake SP sync code */ \n\n";
+    // errs()<<"/*emitting after call fake SP sync code should be disabled for real test!\n";
+    // MCInst Sync1 =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::SP).addReg(AArch64::X27).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
+    // Sync1.print(errs());
+    // EmitToStreamer(*OutStreamer, Sync1);    
+    // errs()<<"\nend emitting fake SP sync code */ \n\n";
   return;
   }
 
@@ -1690,6 +1690,23 @@ auto MI_first = MBB.getFirstNonDebugInstr();
           errs()<<"end emitting rewritting for LD/ST*/\n\n";
           return;
     }
+
+    // if (MI->isTerminator()){
+    //   errs()<<"/*emitting Terminator before fake SP sync code should be disabled for real test!\n";
+    //   MCInst Sync =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::X27).addReg(AArch64::SP).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
+    //   Sync.print(errs());
+    //   EmitToStreamer(*OutStreamer, Sync);    
+    //   errs()<<"\nend emitting fake SP sync code */ \n\n";
+      
+    //   EmitToStreamer(*OutStreamer, TmpInst);
+      
+    //   errs()<<"/*emitting after call fake SP sync code should be disabled for real test!\n";
+    //   MCInst Sync1 =  MCInstBuilder(AArch64::ADDXri).addReg(AArch64::SP).addReg(AArch64::X27).addOperand(MCOperand::createImm(0)).addOperand(MCOperand::createImm(0));
+    //   Sync1.print(errs());
+    //   EmitToStreamer(*OutStreamer, Sync1);    
+    //   errs()<<"\nend emitting fake SP sync code */ \n\n";
+    //   return;
+    // }
 
     EmitToStreamer(*OutStreamer, TmpInst);
     OutStreamer->bundling_end();

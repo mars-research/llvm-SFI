@@ -92,11 +92,11 @@ def W23   : AArch64Reg<23, "w23">, DwarfRegNum<[23]>;
 def W24   : AArch64Reg<24, "w24">, DwarfRegNum<[24]>;
 def W25   : AArch64Reg<25, "w25">, DwarfRegNum<[25]>;
 def W26   : AArch64Reg<26, "w26">, DwarfRegNum<[26]>;
-def W27   : AArch64Reg<31, "w27">, DwarfRegNum<[27]>;
+def W27   : AArch64Reg<27, "w27">, DwarfRegNum<[27]>;
 def W28   : AArch64Reg<28, "w28">, DwarfRegNum<[28]>;
 def W29   : AArch64Reg<29, "w29">, DwarfRegNum<[29]>;
 def W30   : AArch64Reg<30, "w30">, DwarfRegNum<[30]>;
-def WSP   : AArch64Reg<27, "wsp">, DwarfRegNum<[31]>;
+def WSP   : AArch64Reg<31, "wsp">, DwarfRegNum<[31]>;
 def WZR   : AArch64Reg<31, "wzr">, DwarfRegAlias<WSP>;
 
 let SubRegIndices = [sub_32] in {
@@ -127,11 +127,11 @@ def X23   : AArch64Reg<23, "x23", [W23]>, DwarfRegAlias<W23>;
 def X24   : AArch64Reg<24, "x24", [W24]>, DwarfRegAlias<W24>;
 def X25   : AArch64Reg<25, "x25", [W25]>, DwarfRegAlias<W25>;
 def X26   : AArch64Reg<26, "x26", [W26]>, DwarfRegAlias<W26>;
-def X27   : AArch64Reg<31, "x27", [W27]>, DwarfRegAlias<W27>;
+def X27   : AArch64Reg<27, "x27", [W27]>, DwarfRegAlias<W27>;
 def X28   : AArch64Reg<28, "x28", [W28]>, DwarfRegAlias<W28>;
 def FP    : AArch64Reg<29, "x29", [W29]>, DwarfRegAlias<W29>;
 def LR    : AArch64Reg<30, "x30", [W30]>, DwarfRegAlias<W30>;
-def SP    : AArch64Reg<27, "sp",  [WSP]>, DwarfRegAlias<WSP>;
+def SP    : AArch64Reg<31, "sp",  [WSP]>, DwarfRegAlias<WSP>;
 def XZR   : AArch64Reg<31, "xzr", [WZR]>, DwarfRegAlias<WSP>;
 }
 
