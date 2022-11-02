@@ -43,6 +43,9 @@ FunctionPass *createAArch64SLSHardeningPass();
 FunctionPass *createAArch64IndirectThunks();
 FunctionPass *createAArch64SpeculationHardeningPass();
 FunctionPass *createAArch64LoadStoreOptimizationPass();
+FunctionPass *createAArch64NaClMFPass(); //arm nacl
+FunctionPass *createAArch64NaClMFPassDebugPre(); //arm nacl
+FunctionPass *createAArch64NaClMFPassDebugPost(); //arm nacl
 ModulePass *createAArch64LowerHomogeneousPrologEpilogPass();
 FunctionPass *createAArch64SIMDInstrOptPass();
 ModulePass *createAArch64PromoteConstantPass();

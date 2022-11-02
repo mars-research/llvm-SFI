@@ -8148,6 +8148,87 @@ unsigned llvm::getBLRCallOpcode(const MachineFunction &MF) {
     return AArch64::BLR;
 }
 
+//arm nacl
+bool AArch64InstrInfo::isLdSt(const MachineInstr &MI){
+  if(isPairLdSt(MI)){
+    return true;
+  }
+  if(isPreLdSt(MI)){
+    return true;
+  }
+  if(isPairableLdStInst(MI)){
+    return true;
+  }
+
+  return false;
+}
+
+bool AArch64InstrInfo::isUpdateLdSt(const MachineInstr &MI){
+  if(isPairLdSt(MI)){
+    if(MI.getOperand(3).isReg()){
+      return true;
+    }else{
+      return false;
+    }
+  }else{
+    if(MI.getOperand(2).isReg()){
+      return true;
+    }else{
+      return false;
+    }
+  }
+}
+
+bool AArch64InstrInfo::isPairLdSt(const MachineInstr &MI) {
+  switch (MI.getOpcode()) {
+  default:
+    return false;
+  case AArch64::LDNPDi:
+  case AArch64::LDNPQi:
+  case AArch64::LDNPSi:
+  case AArch64::LDNPWi:
+  case AArch64::LDNPXi:
+  case AArch64::LDPDi:
+  case AArch64::LDPDpost:
+  case AArch64::LDPDpre:
+  case AArch64::LDPQi:
+  case AArch64::LDPQpost:
+  case AArch64::LDPQpre:
+  case AArch64::LDPSWi:
+  case AArch64::LDPSWpost:
+  case AArch64::LDPSWpre:
+  case AArch64::LDPSi:
+  case AArch64::LDPSpost:
+  case AArch64::LDPSpre:
+  case AArch64::LDPWi:
+  case AArch64::LDPWpost:
+  case AArch64::LDPWpre:
+  case AArch64::LDPXi:
+  case AArch64::LDPXpost:
+  case AArch64::LDPXpre:
+    return true;
+  case AArch64::STNPDi:
+  case AArch64::STNPQi:
+  case AArch64::STNPXi:
+  case AArch64::STPDi:
+  case AArch64::STPDpost:
+  case AArch64::STPDpre:
+  case AArch64::STPQi:
+  case AArch64::STPQpost:
+  case AArch64::STPQpre:
+  case AArch64::STPSpost:
+  case AArch64::STPSpre:
+  case AArch64::STPWpost:
+  case AArch64::STPWpre:
+  case AArch64::STPXi:
+  case AArch64::STPXpost:
+  case AArch64::STPXpre:
+  case AArch64::STPSi:
+  case AArch64::STPWi:
+    return true;
+  }
+}
+
 #define GET_INSTRINFO_HELPERS
 #define GET_INSTRMAP_INFO
 #include "AArch64GenInstrInfo.inc"

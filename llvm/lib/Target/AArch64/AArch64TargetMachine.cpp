@@ -805,6 +805,10 @@ void AArch64PassConfig::addPreEmitPass() {
   if (TM->getOptLevel() != CodeGenOpt::None && EnableCollectLOH &&
       TM->getTargetTriple().isOSBinFormatMachO())
     addPass(createAArch64CollectLOHPass());
+
+  addPass(createAArch64NaClMFPassDebugPre());//arm nacl
+  addPass(createAArch64NaClMFPass());//arm nacl
+  addPass(createAArch64NaClMFPassDebugPost());//arm nacl
 }
 
 void AArch64PassConfig::addPreEmitPass2() {
