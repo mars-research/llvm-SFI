@@ -50,18 +50,18 @@ namespace{
 }
 char AArch64NaClMFPass::ID = 0;
 bool AArch64NaClMFPass::runOnMachineFunction(MachineFunction &MF) {
-    errs()<<"NaClMFPass invoked!\n";
+    //errs()<<"NaClMFPass invoked!\n";
     for (MachineBasicBlock &MBB : MF) {
       for (MachineInstr &MI : MBB) {
         if (MI.isDebugInstr())
           continue;
 
         if (AArch64InstrInfo::isLdSt(MI)){
-          errs()<<"found ldst\n";
-          MI.print(errs());
+          //errs()<<"found ldst\n";
+          //MI.print(errs());
           const TargetInstrInfo *TII = MBB.getParent()->getSubtarget().getInstrInfo();
           BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-          errs()<<"\n";
+          //errs()<<"\n";
       }
     }
   }
