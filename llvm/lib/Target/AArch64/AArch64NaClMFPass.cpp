@@ -43,6 +43,7 @@ namespace{
     class AArch64NaClMFPass : public MachineFunctionPass{
     public:
         bool fake_checks = true;
+        bool ignore_rrldst = true;
         static char ID;
         AArch64NaClMFPass() : MachineFunctionPass(ID){}
         StringRef getPassName() const override { return "AArch64NaClMFPass"; }
@@ -75,9 +76,9 @@ bool AArch64NaClMFPass::runOnMachineFunction(MachineFunction &MF) {
             errs()<<"fatal LDP/STP with no register operand!\n;";
             abort();
           }
-          if (MI.getOperand(op_idx+1).isReg()){
-          errs()<<"LD/ST has two addressing registers, don't know what to do with it for now\n";
-          errs()<<"\n";
+          if (MI.getOperand(op_idx+1).isReg() && !ignore_rrldst){
+            errs()<<"two indexing reg ld/st is not supported yet\n;";
+            abort();
           }
           else{
             if (bundle_counter==12){
@@ -119,7 +120,7 @@ bool AArch64NaClMFPass::runOnMachineFunction(MachineFunction &MF) {
             BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
               MI.getOperand(0).getReg()).addReg(
               MI.getOperand(0).getReg()).addReg(
-              MI.getOperand(0).getReg()).addImm(0).addImm(3);//clear
+              AArch64::WZR).addImm(0).addImm(0);//clear
             BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
               MI.getOperand(0).getReg()).addReg(
               MI.getOperand(0).getReg()).addReg(
@@ -159,7 +160,7 @@ bool AArch64NaClMFPass::runOnMachineFunction(MachineFunction &MF) {
             BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
               MI.getOperand(0).getReg()).addReg(
               MI.getOperand(0).getReg()).addReg(
-              MI.getOperand(0).getReg()).addImm(0).addImm(3);//clear
+             AArch64::WZR).addImm(0).addImm(0);//clear
             BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
               MI.getOperand(0).getReg()).addReg(
               MI.getOperand(0).getReg()).addReg(
