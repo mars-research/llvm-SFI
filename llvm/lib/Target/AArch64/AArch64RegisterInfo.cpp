@@ -337,6 +337,11 @@ AArch64RegisterInfo::getReservedRegs(const MachineFunction &MF) const {
       Reserved.set(*SubReg);
   }
 
+  //arm nacl
+  markSuperRegs(Reserved, AArch64::X28);
+  //markSuperRegs(Reserved, AArch64::X28);
+  //markSuperRegs(Reserved, AArch64::X28);
+
   assert(checkAllSuperRegsMarked(Reserved));
   return Reserved;
 }

@@ -7,7 +7,7 @@
 
   outputs = { self, mars-std, ... }: let
     # System types to support.
-    supportedSystems = [ "x86_64-linux" ];
+    supportedSystems = [ "x86_64-linux" "aarch64-linux" ];
   in mars-std.lib.eachSystem supportedSystems (system: let
     pkgs = mars-std.legacyPackages.${system};
     armNativePkgs = mars-std.legacyPackages.aarch64-linux;
