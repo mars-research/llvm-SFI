@@ -330,6 +330,9 @@ static void AddOptimizationPasses(legacy::PassManagerBase &MPM,
                                   legacy::FunctionPassManager &FPM,
                                   TargetMachine *TM, unsigned OptLevel,
                                   unsigned SizeLevel) {
+  
+  errs()<<"AddOptimizationPasses\n";
+
   if (!NoVerify || VerifyEach)
     FPM.add(createVerifierPass()); // Verify that input is correct
 

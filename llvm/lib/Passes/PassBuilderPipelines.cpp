@@ -38,6 +38,7 @@
 #include "llvm/Transforms/Coroutines/CoroSplit.h"
 #include "llvm/Transforms/IPO/AlwaysInliner.h"
 #include "llvm/Transforms/IPO/Annotation2Metadata.h"
+#include "llvm/Transforms/IPO/NaClIRPass.h"
 #include "llvm/Transforms/IPO/ArgumentPromotion.h"
 #include "llvm/Transforms/IPO/Attributor.h"
 #include "llvm/Transforms/IPO/CalledValuePropagation.h"
@@ -127,6 +128,7 @@
 #include "llvm/Transforms/Vectorize/LoopVectorize.h"
 #include "llvm/Transforms/Vectorize/SLPVectorizer.h"
 #include "llvm/Transforms/Vectorize/VectorCombine.h"
+
 
 using namespace llvm;
 
@@ -1306,6 +1308,8 @@ PassBuilder::buildPerModuleDefaultPipeline(OptimizationLevel Level,
   assert(Level != OptimizationLevel::O0 &&
          "Must request optimizations for the default pipeline!");
 
+  errs()<<"buildPerModuleDefaultPipeline\n";
+
   ModulePassManager MPM;
 
   // Convert @llvm.global.annotations to !annotation metadata.
@@ -1340,6 +1344,7 @@ PassBuilder::buildPerModuleDefaultPipeline(OptimizationLevel Level,
   if (LTOPreLink)
     addRequiredLTOPreLinkPasses(MPM);
 
+  MPM.addPass(NaClIRPass());
   return MPM;
 }
 
@@ -1768,7 +1773,7 @@ ModulePassManager PassBuilder::buildO0DefaultPipeline(OptimizationLevel Level,
          "buildO0DefaultPipeline should only be used with O0");
 
   ModulePassManager MPM;
-
+  errs()<<"buildO0DefaultPipeline invokded\n";
   // Perform pseudo probe instrumentation in O0 mode. This is for the
   // consistency between different build modes. For example, a LTO build can be
   // mixed with an O0 prelink and an O2 postlink. Loading a sample profile in
@@ -1866,6 +1871,8 @@ ModulePassManager PassBuilder::buildO0DefaultPipeline(OptimizationLevel Level,
     addRequiredLTOPreLinkPasses(MPM);
 
   MPM.addPass(createModuleToFunctionPassAdaptor(AnnotationRemarksPass()));
+
+  MPM.addPass(NaClIRPass());
 
   return MPM;
 }

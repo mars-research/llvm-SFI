@@ -4028,12 +4028,20 @@ void X86AsmParser::applyLVILoadHardeningMitigation(MCInst &Inst,
 
 void X86AsmParser::emitInstruction(MCInst &Inst, OperandVector &Operands,
                                    MCStreamer &Out) {
+
+  if(Inst.getNumOperands() >=2){
+    if(Inst.getOperand(0).getReg() == X86::NaclEndBundle || Inst.getOperand(0).getReg() == X86::NaclStartBundle) {
+      errs()<<"find bunlde\n";
+      //return;    
+    }
+  }
+
   if (LVIInlineAsmHardening &&
       getSTI().getFeatureBits()[X86::FeatureLVIControlFlowIntegrity])
     applyLVICFIMitigation(Inst, Out);
 
   Out.emitInstruction(Inst, getSTI());
-
+  
   if (LVIInlineAsmHardening &&
       getSTI().getFeatureBits()[X86::FeatureLVILoadHardening])
     applyLVILoadHardeningMitigation(Inst, Out);

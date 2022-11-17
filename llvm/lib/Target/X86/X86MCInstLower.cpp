@@ -2412,6 +2412,26 @@ static void addConstantComments(const MachineInstr *MI,
   }
 }
 
+static void getNextBundleEnd(const MachineInstr *MI){
+  const MachineFunction &MF = *(MI->getMF());
+  bool start_counting = false;
+  int bundle_size = 0;
+    for (const MachineBasicBlock &MBB : MF) {
+      for (const MachineInstr &I : MBB) {
+        if(start_counting){
+          if(I.isInlineAsm()){
+            if (std::string(I.getOperand(0).getSymbolName()).find("%NaclEndBundle")){
+              errs()<<"find end bundle\n";
+            }
+            return;
+          }
+        }else if(MI == &I){
+          start_counting = true;
+        }
+      }
+    }
+}
+
 void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
   // FIXME: Enable feature predicate checks once all the test pass.
   // X86_MC::verifyInstructionPredicates(MI->getOpcode(),
@@ -2673,6 +2693,7 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
 
   MCInst TmpInst;
   MCInstLowering.Lower(MI, TmpInst);
+  getNextBundleEnd(MI);
 
   // Stackmap shadows cannot include branch targets, so we can count the bytes
   // in a call towards the shadow, but must ensure that the no thread returns

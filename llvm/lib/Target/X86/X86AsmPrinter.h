@@ -152,6 +152,10 @@ public:
   bool shouldEmitWeakSwiftAsyncExtendedFramePointerFlags() const override {
     return ShouldEmitWeakSwiftAsyncExtendedFramePointerFlags;
   }
+
+  int nacl_counter = 32;
+  void reset_nacl_counter(){nacl_counter=0;}
+  void NaCl_emitInstr(MCInst &Inst);
 };
 
 } // end namespace llvm

@@ -91,6 +91,7 @@
 #include "llvm/Transforms/Coroutines/CoroSplit.h"
 #include "llvm/Transforms/IPO/AlwaysInliner.h"
 #include "llvm/Transforms/IPO/Annotation2Metadata.h"
+#include "llvm/Transforms/IPO/NaClIRPass.h"
 #include "llvm/Transforms/IPO/ArgumentPromotion.h"
 #include "llvm/Transforms/IPO/Attributor.h"
 #include "llvm/Transforms/IPO/BlockExtractor.h"
@@ -1152,6 +1153,7 @@ Error PassBuilder::parseModulePass(ModulePassManager &MPM,
         L.getSpeedupLevel() > 1 && L != OptimizationLevel::Oz;
 
     if (Matches[1] == "default") {
+      errs()<<"parseModulePass\n";
       MPM.addPass(buildPerModuleDefaultPipeline(L));
     } else if (Matches[1] == "thinlto-pre-link") {
       MPM.addPass(buildThinLTOPreLinkDefaultPipeline(L));
