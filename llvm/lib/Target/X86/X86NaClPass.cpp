@@ -54,7 +54,6 @@ namespace{
 
 char X86NaClPass::ID = 0;
 bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
-  errs()<<"nacl pass invoked!\n";
       MF.setAlignment(Align(32));
     for (MachineBasicBlock &MBB : MF) {
       MBB.setAlignment(Align(32));
@@ -63,11 +62,13 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
         if (MI.isDebugInstr() || MI.isCFIInstruction()|| MI.isKill())
           continue;        
         
-        if(MI.isReturn()){
+
+        if(MI.getOpcode()==X86::RET64){
 	        const DebugLoc DL = MI.getDebugLoc();
           const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
 	        BuildMI(MBB, MI, DL, TII->get(X86::POP64r)) 
-		        .addReg(X86::R8, RegState::Define);//R8 is caller saved so it's ok to use it to store the ret addr
+		        .addReg(X86::R8, RegState::Define)
+            .setMIFlags(MachineInstr::NaclStartBundle);//R8 is caller saved so it's ok to use it to store the ret addr
           BuildMI(MBB, MI, DL, TII->get(X86::OR64ri32))
             .addReg(X86::R8, RegState::Define)
             .addReg(X86::R8, RegState::Kill)
@@ -77,20 +78,35 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
             .addReg(X86::R8, RegState::Kill)
             .addReg(X86::R8, RegState::Kill);
           BuildMI(MBB, MI, DL, TII->get(X86::JMP64r))
-            .addReg(X86::R8, RegState::Kill);
+            .addReg(X86::R8, RegState::Kill)
+            .setMIFlags(MachineInstr::NaclEndBundle);
         }else if(MI.getOpcode() == X86::CALL64r || MI.getOpcode() == X86::JMP64r){
           const DebugLoc DL = MI.getDebugLoc();
           const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
-          errs()<<"call64r\n";
-          MI.print(errs());
+          //errs()<<"call64r\n";
         BuildMI(MBB, MI, DL, TII->get(X86::OR64ri32))
             .addReg(MI.getOperand(0).getReg(), RegState::Define)
             .addReg(MI.getOperand(0).getReg(), RegState::Kill)
-            .addImm(0x0);
+            .addImm(0x0)
+            .setMIFlags(MachineInstr::NaclStartBundle);
         BuildMI(MBB, MI, DL, TII->get(X86::AND64rr))
             .addReg(MI.getOperand(0).getReg(), RegState::Define)
             .addReg(MI.getOperand(0).getReg(), RegState::Kill)
             .addReg(MI.getOperand(0).getReg(), RegState::Kill);
+        MI.setFlags(MachineInstr::NaclEndBundle);
+        }else{
+          const DebugLoc DL = MI.getDebugLoc();
+          const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
+          int n = MI.getNumOperands();
+          for (int i = 0; i < n; i++){
+            auto operand = MI.getOperand(i);
+            if(operand.isReg()){
+              //nacl TODO: add rsp checks
+              if(operand.getReg() == X86::RSP && (getRegState(operand) & RegState::Define)){
+                //BuildMI(MBB, MI, DL, TII->get(X86::NOOP));
+              }
+            }
+          }
         }
         
       }

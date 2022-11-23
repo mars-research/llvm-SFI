@@ -1308,7 +1308,7 @@ PassBuilder::buildPerModuleDefaultPipeline(OptimizationLevel Level,
   assert(Level != OptimizationLevel::O0 &&
          "Must request optimizations for the default pipeline!");
 
-  errs()<<"buildPerModuleDefaultPipeline\n";
+  //errs()<<"buildPerModuleDefaultPipeline\n";
 
   ModulePassManager MPM;
 

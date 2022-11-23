@@ -32,21 +32,17 @@ using namespace llvm;
 
 PreservedAnalyses NaClIRPass::run(Module &M,
                                                ModuleAnalysisManager &AM) {
-    errs()<<"NaClIRPass invoked!\n";
 
     std::error_code EC;
 
 
     for (Function &F : M){
-            llvm::raw_fd_ostream OS("/users/BUXD/llvm-SFI/ll.nosfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
-            F.print(OS);
-            OS.close();
+            // llvm::raw_fd_ostream OS("/users/BUXD/llvm-SFI/ll.nosfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
+            // F.print(OS);
+            // OS.close();
         for (auto &BB : F){
             for (auto &I : BB) {
                 if(I.getOpcode() == Instruction::Load){
-                    errs()<<"load!\n";
-                    I.print(errs());
-                    errs()<<"\n";
 
                     //emitting startbundle 
                     IRBuilder<> IRSB(&(I));
@@ -85,9 +81,6 @@ PreservedAnalyses NaClIRPass::run(Module &M,
                     llvm::CallInst *EBResult = IRBE.CreateCall(EBIA, EBBundleArgs);
                     EBResult->setDebugLoc(I.getDebugLoc());
                 }else if(I.getOpcode() == Instruction::Store){
-                    errs()<<"store: ";
-                    I.print(errs());
-                    errs()<<"\n";
 
                     //emitting startbundle 
                     IRBuilder<> IRSB(&(I));
@@ -111,11 +104,10 @@ PreservedAnalyses NaClIRPass::run(Module &M,
                     StringRef constraints = "=r,0,~{dirflag},~{fpsr},~{flags}";
                     llvm::InlineAsm *IA = llvm::InlineAsm::get(FTy,AsmString,constraints,true,InlineAsm::AD_ATT); 
                     ArrayRef<Value *> Args = {ST->getPointerOperand()};
-                    ST->getPointerOperand()->print(errs());
                     llvm::CallInst *Result = IRB.CreateCall(IA, {ST->getPointerOperand()});
                     I.getOperandList()[1]=Result;
                     Result->setDebugLoc(I.getDebugLoc());
-                    errs()<<"end of store\n";
+                    //errs()<<"end of store\n";
 
                     //emitting endbundle
                     IRBuilder<> IRBE(I.getNextNonDebugInstruction());           
@@ -130,9 +122,9 @@ PreservedAnalyses NaClIRPass::run(Module &M,
                 }
             }
         }
-        llvm::raw_fd_ostream OSS("/users/BUXD/llvm-SFI/ll.sfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
-        F.print(OSS);
-        OSS.close();
+        // llvm::raw_fd_ostream OSS("/users/BUXD/llvm-SFI/ll.sfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
+        // F.print(OSS);
+        // OSS.close();
     }
 
     return PreservedAnalyses::all();

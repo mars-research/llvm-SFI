@@ -250,6 +250,13 @@ class MCStreamer {
   /// discussion for future inclusion.
   bool AllowAutoPadding = false;
 
+public:
+  //nacl
+  int64_t NaClCounter = 0;
+  void reset_counter(){NaClCounter = 0;}
+  virtual int64_t GetInstEncodingLen(const MCInst &Inst, const MCSubtargetInfo &STI){errs()<<"GetInstEncodingLen only implemented in MCObjStreamer!\n";return -1;}
+  bool Bundle_Started = false;
+
 protected:
   MCStreamer(MCContext &Ctx);
 
@@ -276,6 +283,7 @@ public:
 
   void visitUsedExpr(const MCExpr &Expr);
   virtual void visitUsedSymbol(const MCSymbol &Sym);
+
 
   void setTargetStreamer(MCTargetStreamer *TS) {
     TargetStreamer.reset(TS);

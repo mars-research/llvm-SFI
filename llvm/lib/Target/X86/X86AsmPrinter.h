@@ -122,6 +122,9 @@ public:
   StringRef getPassName() const override {
     return "X86 Assembly Printer";
   }
+  //nacl
+  void CheckBundle(const MachineInstr *MI);
+  void CheckBundleInlineAsm(const MachineInstr *MI) override;
 
   const X86Subtarget &getSubtarget() const { return *Subtarget; }
 

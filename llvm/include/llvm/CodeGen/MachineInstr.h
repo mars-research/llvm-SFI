@@ -112,6 +112,9 @@ public:
     NoMerge      = 1 << 15,             // Passes that drop source location info
                                         // (e.g. branch folding) should skip
                                         // this instruction.
+    NaclStartBundle = 1 << 16,
+    NaclEndBundle = 1 << 17,
+    NaclMiddleBundle = 1 << 18,
   };
 
 private:
@@ -122,7 +125,7 @@ private:
   MachineOperand *Operands = nullptr;   // Pointer to the first operand.
   unsigned NumOperands = 0;             // Number of operands on instruction.
 
-  uint16_t Flags = 0;                   // Various bits of additional
+  uint32_t Flags = 0;                   // Various bits of additional
                                         // information about machine
                                         // instruction.
 
@@ -324,7 +327,7 @@ public:
   }
 
   /// Return the MI flags bitvector.
-  uint16_t getFlags() const {
+  uint32_t getFlags() const {
     return Flags;
   }
 
@@ -335,7 +338,7 @@ public:
 
   /// Set a MI flag.
   void setFlag(MIFlag Flag) {
-    Flags |= (uint16_t)Flag;
+    Flags |= (uint32_t)Flag;
   }
 
   void setFlags(unsigned flags) {
@@ -346,7 +349,7 @@ public:
 
   /// clearFlag - Clear a MI flag.
   void clearFlag(MIFlag Flag) {
-    Flags &= ~((uint16_t)Flag);
+    Flags &= ~((uint32_t)Flag);
   }
 
   /// Return true if MI is in a bundle (but not the first MI in a bundle).
@@ -1789,9 +1792,9 @@ public:
   /// Return the MIFlags which represent both MachineInstrs. This
   /// should be used when merging two MachineInstrs into one. This routine does
   /// not modify the MIFlags of this MachineInstr.
-  uint16_t mergeFlagsWith(const MachineInstr& Other) const;
+  uint32_t mergeFlagsWith(const MachineInstr& Other) const;
 
-  static uint16_t copyFlagsFromInstruction(const Instruction &I);
+  static uint32_t copyFlagsFromInstruction(const Instruction &I);
 
   /// Copy all flags to MachineInst MIFlags
   void copyIRFlags(const Instruction &I);
