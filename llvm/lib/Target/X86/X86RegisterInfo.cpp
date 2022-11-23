@@ -532,6 +532,16 @@ BitVector X86RegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   BitVector Reserved(getNumRegs());
   const X86FrameLowering *TFI = getFrameLowering(MF);
 
+  Reserved.set(X86::R15);//SXFI
+  Reserved.set(X86::R15D);//SXFI
+  Reserved.set(X86::R15W);//SXFI
+  Reserved.set(X86::R15B);//SXFI
+
+  Reserved.set(X86::R14);//SXFI
+  Reserved.set(X86::R14D);//SXFI
+  Reserved.set(X86::R14W);//SXFI
+  Reserved.set(X86::R14B);//SXFI
+
   // Set the floating point control register as reserved.
   Reserved.set(X86::FPCW);
 

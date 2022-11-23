@@ -151,6 +151,11 @@ FunctionPass *createX86InsertX87waitPass();
 /// ways.
 FunctionPass *createX86PartialReductionPass();
 
+///NaCl
+FunctionPass *createX86SXFIPass();
+FunctionPass *createX86SXFIDebugPrePass();
+FunctionPass *createX86SXFIDebugPostPass();
+
 InstructionSelector *createX86InstructionSelector(const X86TargetMachine &TM,
                                                   X86Subtarget &,
                                                   X86RegisterBankInfo &);

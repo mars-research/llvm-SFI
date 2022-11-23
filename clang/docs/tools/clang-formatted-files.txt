@@ -5573,6 +5573,7 @@ llvm/include/llvm/Transforms/Instrumentation/InstrProfiling.h
 llvm/include/llvm/Transforms/Instrumentation/MemProfiler.h
 llvm/include/llvm/Transforms/Instrumentation/SanitizerCoverage.h
 llvm/include/llvm/Transforms/IPO/Annotation2Metadata.h
+llvm/include/llvm/Transforms/IPO/SXFIIRPass.h
 llvm/include/llvm/Transforms/IPO/ArgumentPromotion.h
 llvm/include/llvm/Transforms/IPO/Attributor.h
 llvm/include/llvm/Transforms/IPO/BlockExtractor.h
@@ -6871,7 +6872,7 @@ llvm/lib/Transforms/Instrumentation/InstrProfiling.cpp
 llvm/lib/Transforms/Instrumentation/MemProfiler.cpp
 llvm/lib/Transforms/Instrumentation/PGOMemOPSizeOpt.cpp
 llvm/lib/Transforms/Instrumentation/ValueProfileCollector.h
-llvm/lib/Transforms/IPO/Annotation2Metadata.cpp
+llvm/lib/Transforms/IPO/NaClIRPass.cpp
 llvm/lib/Transforms/IPO/Attributor.cpp
 llvm/lib/Transforms/IPO/ElimAvailExtern.cpp
 llvm/lib/Transforms/IPO/ModuleInliner.cpp
