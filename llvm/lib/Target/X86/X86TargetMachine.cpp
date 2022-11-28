@@ -121,14 +121,14 @@ static std::string computeDataLayout(const Triple &TT) {
 
   Ret += DataLayout::getManglingComponent(TT);
   // X86 and x32 have 32 bit pointers.
-  if (!TT.isArch64Bit() || TT.isX32() || TT.isOSSXFI())
+  if (!TT.isArch64Bit() || TT.isX32() || TT.isOSNaCl())
     Ret += "-p:32:32";
 
   // Address spaces for 32 bit signed, 32 bit unsigned, and 64 bit pointers.
   Ret += "-p270:32:32-p271:32:32-p272:64:64";
 
   // Some ABIs align 64 bit integers and doubles to 64 bits, others to 32.
-  if (TT.isArch64Bit() || TT.isOSWindows() || TT.isOSSXFI())
+  if (TT.isArch64Bit() || TT.isOSWindows() || TT.isOSNaCl())
     Ret += "-i64:64";
   else if (TT.isOSIAMCU())
     Ret += "-i64:32-f64:32";
@@ -136,7 +136,7 @@ static std::string computeDataLayout(const Triple &TT) {
     Ret += "-f64:32:64";
 
   // Some ABIs align long double to 128 bits, others to 32.
-  if (TT.isOSSXFI() || TT.isOSIAMCU())
+  if (TT.isOSNaCl() || TT.isOSIAMCU())
     ; // No f80
   else if (TT.isArch64Bit() || TT.isOSDarwin() || TT.isWindowsMSVCEnvironment())
     Ret += "-f80:128";

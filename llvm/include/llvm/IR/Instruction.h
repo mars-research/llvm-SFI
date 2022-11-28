@@ -80,6 +80,7 @@ protected:
   ~Instruction(); // Use deleteValue() to delete a generic Instruction.
 
 public:
+  bool SXFI_rewritten = false;
   Instruction(const Instruction &) = delete;
   Instruction &operator=(const Instruction &) = delete;
 

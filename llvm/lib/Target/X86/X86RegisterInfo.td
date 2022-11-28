@@ -428,7 +428,7 @@ def GR32 : RegisterClass<"X86", [i32], 32,
 // tests because of the inclusion of RIP in this register class.
 def GR64 : RegisterClass<"X86", [i64], 64,
                          (add RAX, RCX, RDX, RSI, RDI, R8, R9, R10, R11,
-                              RBX, R14, R15, R12, R13, RBP, RSP, RIP, NaclStartBundle, NaclEndBundle)>;
+                              RBX, R14, R15, R12, R13, RBP, RSP, RIP)>;
 
 // GR64PLTSafe - 64-bit GPRs without R10, R11, RSP and RIP. Could be used when
 // emitting code for intrinsics, which use implict input registers.

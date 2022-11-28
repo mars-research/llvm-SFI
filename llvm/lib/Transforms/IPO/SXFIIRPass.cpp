@@ -1,4 +1,5 @@
 #include "llvm/Transforms/IPO/SXFIIRPass.h"
+#include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Function.h"
@@ -30,102 +31,204 @@ using namespace llvm;
 
 #define DEBUG_TYPE "SXFIir"
 
+static bool debug = false;
+
 PreservedAnalyses SXFIIRPass::run(Module &M,
                                                ModuleAnalysisManager &AM) {
 
     std::error_code EC;
 
-
+    llvm::Type *Int8ptr = Type::getInt8PtrTy(M.getContext());
+    llvm::Function *FMemWrtChk;
+    llvm::Function * Chk = M.getFunction("sxfi_capability_check");
+    if (Chk) {
+      FMemWrtChk =  Chk;
+    }
+    else{
+    llvm::Type *Rty = Type::getVoidTy(M.getContext());;
+    std::vector<llvm::Type *> PArray = {Int8ptr};
+    llvm::FunctionType *FTy = llvm::FunctionType::get(Rty, PArray, false);
+    FMemWrtChk = llvm::Function::Create(FTy, llvm::GlobalValue::ExternalLinkage,
+        llvm::Twine("sxfi_capability_check"), &M);
+    }
     for (Function &F : M){
-            // llvm::raw_fd_ostream OS("/users/BUXD/llvm-SFI/ll.nosfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
-            // F.print(OS);
-            // OS.close();
-        for (auto &BB : F){
-            for (auto &I : BB) {
-                if(I.getOpcode() == Instruction::Load){
+            llvm::raw_fd_ostream OS("ll.nosfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
+            F.print(OS);
+            OS.close();
+        std::vector<BasicBlock *> BBs;
+        for (BasicBlock &BB : F)
+            BBs.push_back(&BB);
 
-                    //emitting startbundle 
-                    IRBuilder<> IRSB(&(I));
-                    StringRef SBconstraints = "~{dirflag},~{fpsr},~{flags}";          
-                    llvm::Type *voidty = Type::getVoidTy(M.getContext());;
-                    std::vector<llvm::Type *> SBPArray = {};
-                    llvm::FunctionType *BundleTy = llvm::FunctionType::get(voidty, SBPArray, false);
-                    StringRef SBAsmString = "mov %r15, %r15";
-                    llvm::InlineAsm *SBIA = llvm::InlineAsm::get(BundleTy,SBAsmString,SBconstraints,true,InlineAsm::AD_ATT); 
-                    ArrayRef<Value *> BundleArgs = {};
-                    llvm::CallInst *SBResult = IRSB.CreateCall(SBIA, BundleArgs);
-                    SBResult->setDebugLoc(I.getDebugLoc());
+            // BBs.size() will change within the loop, so we query it every time
+        for (unsigned i = 0; i < BBs.size(); i++) {
+            BasicBlock &BB = *BBs[i];
+            for (Instruction &I : BB) {
+                if(I.getOpcode() == Instruction::Load && !I.SXFI_rewritten){
+                    
+                    ///*****
+                    if(debug){
+                        errs()<<"\n\nfind a load: ;\n";
+                        I.print(errs());
+                        errs()<<"\n before: \n";
+                        F.print(errs());
+                    }
+                    ///*****
 
-                    //emitting rewritting
+
+                    //create bb for slowpath fast path stay in the old bb
+                    BasicBlock* slowpathBB = SplitBlock(I.getParent(),&I);
+
+
+                    ///*****
+                    if(debug){
+                        errs()<<"\n ---------after----------: \n";
+                        F.print(errs());
+                        errs()<<"\nend \n\n\n;\n";
+                    }
+                    ///*****
+
+
                     IRBuilder<> IRB(&(I));
-                    StringRef constraints = "=r,0,~{dirflag},~{fpsr},~{flags}";
                     llvm::LoadInst *LD = llvm::dyn_cast<LoadInst>(&I);
-                    llvm::Type *Rty = LD->getPointerOperand()->getType();
-                    std::vector<llvm::Type *> PArray = {LD->getPointerOperand()->getType()};
-                    llvm::FunctionType *FTy = llvm::FunctionType::get(Rty, PArray, false);
-                    StringRef AsmString = "or $$0x0, $0;or $0, $0;";
-                    llvm::InlineAsm *IA = llvm::InlineAsm::get(FTy,AsmString,constraints,true,InlineAsm::AD_ATT); 
-                    ArrayRef<Value *> Args = {LD->getPointerOperand()};
-                    llvm::CallInst *Result = IRB.CreateCall(IA, {LD->getPointerOperand()});
-                    I.getOperandList()[0]=Result;
-                    Result->setDebugLoc(I.getDebugLoc());
-
-                    //emitting endbundle
-                    IRBuilder<> IRBE(I.getNextNonDebugInstruction());           
-                    StringRef EBconstraints = "~{dirflag},~{fpsr},~{flags}";      
-                    std::vector<llvm::Type *> EBPArray = {};
-                    //llvm::FunctionType *BundleTy = llvm::FunctionType::get(voidty, EBPArray, false);
-                    StringRef EBAsmString = "mov %r15, %r15";
-                    llvm::InlineAsm *EBIA = llvm::InlineAsm::get(BundleTy,EBAsmString,EBconstraints,true,InlineAsm::AD_ATT); 
-                    ArrayRef<Value *> EBBundleArgs = {};
-                    llvm::CallInst *EBResult = IRBE.CreateCall(EBIA, EBBundleArgs);
-                    EBResult->setDebugLoc(I.getDebugLoc());
-                }else if(I.getOpcode() == Instruction::Store){
-
-                    //emitting startbundle 
-                    IRBuilder<> IRSB(&(I));
-                    StringRef SBconstraints = "~{dirflag},~{fpsr},~{flags}";          
-                    llvm::Type *voidty = Type::getVoidTy(M.getContext());;
-                    std::vector<llvm::Type *> SBPArray = {};
-                    llvm::FunctionType *BundleTy = llvm::FunctionType::get(voidty, SBPArray, false);
-                    StringRef SBAsmString = "mov %r15, %r15";
-                    llvm::InlineAsm *SBIA = llvm::InlineAsm::get(BundleTy,SBAsmString,SBconstraints,true,InlineAsm::AD_ATT); 
-                    ArrayRef<Value *> BundleArgs = {};
-                    llvm::CallInst *SBResult = IRSB.CreateCall(SBIA, BundleArgs);
-                    SBResult->setDebugLoc(I.getDebugLoc());
+                    std::vector<llvm::Value *> Args;
+                    Args.push_back(LD->getPointerOperand());
+                    llvm::CallInst * cap_check =  IRB.CreateCall(FMemWrtChk, Args);
 
 
+                    //create bb for load
+                    BasicBlock* normal_bb = SplitBlock(I.getParent(),&I);
+
+
+                    //create inline fast path call
+                    llvm::Instruction * branch_inst = BB.getTerminator();
+                    if(branch_inst){
+                        if(branch_inst->getOpcode() != Instruction::Br){
+                            errs()<<"fatal split BB terminator is not Br\n";  
+                        }
+                    }else{
+                        errs()<<"fatal split BB has not terminator\n";
+                        abort();
+                    }
+                    IRBuilder<> Builder(branch_inst);
+                    llvm::Type *voidty = Type::getVoidTy(M.getContext());
+                    std::vector<llvm::Type *> PArray = {};
+                    PArray.push_back(Builder.getPtrTy());
+                    PArray.push_back(Builder.getPtrTy());
+                    PArray.push_back(Builder.getPtrTy());
+                    llvm::FunctionType *FastPathFTy = llvm::FunctionType::get(voidty, PArray, false);
+                    StringRef AsmString = "mov $1, $0;shr $$32, $0;cmpq %r15, $0;je ${2:l};1:;";
+                    StringRef constraints = "r,r,X,~{dx},~{dirflag},~{fpsr},~{flags}";
+                    llvm::BlockAddress * BA = BlockAddress::get(normal_bb);
+                    llvm::InlineAsm *IA = llvm::InlineAsm::get(FastPathFTy,AsmString,constraints,true,InlineAsm::AD_ATT); 
+                    std::vector<Value *> IAArgs = {};
+                    IAArgs.push_back(UndefValue::get(Builder.getPtrTy()));
+                    IAArgs.push_back(LD->getPointerOperand());
+                    IAArgs.push_back(BA);
+                    llvm::CallBrInst *Result =Builder.CreateCallBr(IA, slowpathBB, normal_bb, IAArgs);
+                    //end of fast path call
+
+                    I.SXFI_rewritten = true;
+                    i=0;
+                    BBs.clear();
+                    for (BasicBlock &BB : F)
+                        BBs.push_back(&BB);
+                    break;
+                }else if(I.getOpcode() == Instruction::Store && !I.SXFI_rewritten){
+
+                    ///*****
+                    if(debug){
+                        errs()<<"\n\nfind a store: ;\n";
+                        I.print(errs());
+                        errs()<<"\n before: \n";
+                        F.print(errs());
+                    }
+                    ///*****
+
+
+                    //create bb for slowpath fast path stay in the old bb
+                    BasicBlock* slowpathBB = SplitBlock(I.getParent(),&I);
+
+
+                    ///*****
+                    if(debug){
+                        errs()<<"\n ---------after----------: \n";
+                        F.print(errs());
+                        errs()<<"\nend \n\n\n;\n";
+                    }
+                    ///*****
+
+
+                    IRBuilder<> IRB(&(I));
                     llvm::StoreInst *ST = llvm::dyn_cast<StoreInst>(&I);
-                    IRBuilder<> IRB(ST);
-                    llvm::Type *Rty = ST->getPointerOperand()->getType();
-                    std::vector<llvm::Type *> PArray = {Rty};
-                    llvm::FunctionType *FTy = llvm::FunctionType::get(Rty, PArray, false);
-                    StringRef AsmString = "or $$0x0, $0;or $0, $0;";
-                    StringRef constraints = "=r,0,~{dirflag},~{fpsr},~{flags}";
-                    llvm::InlineAsm *IA = llvm::InlineAsm::get(FTy,AsmString,constraints,true,InlineAsm::AD_ATT); 
-                    ArrayRef<Value *> Args = {ST->getPointerOperand()};
-                    llvm::CallInst *Result = IRB.CreateCall(IA, {ST->getPointerOperand()});
-                    I.getOperandList()[1]=Result;
-                    Result->setDebugLoc(I.getDebugLoc());
-                    //errs()<<"end of store\n";
+                    std::vector<llvm::Value *> Args;
+                    Args.push_back(ST->getPointerOperand());
+                    llvm::CallInst * cap_check =  IRB.CreateCall(FMemWrtChk, Args);
 
-                    //emitting endbundle
-                    IRBuilder<> IRBE(I.getNextNonDebugInstruction());           
-                    StringRef EBconstraints = "~{dirflag},~{fpsr},~{flags}";      
-                    std::vector<llvm::Type *> EBPArray = {};
-                    //llvm::FunctionType *BundleTy = llvm::FunctionType::get(voidty, EBPArray, false);
-                    StringRef EBAsmString = "mov %r15, %r15";
-                    llvm::InlineAsm *EBIA = llvm::InlineAsm::get(BundleTy,EBAsmString,EBconstraints,true,InlineAsm::AD_ATT); 
-                    ArrayRef<Value *> EBBundleArgs = {};
-                    llvm::CallInst *EBResult = IRBE.CreateCall(EBIA, EBBundleArgs);
-                    EBResult->setDebugLoc(I.getDebugLoc());
+
+                    //create bb for load
+                    BasicBlock* normal_bb = SplitBlock(I.getParent(),&I);
+
+
+                    //create inline fast path call
+                    llvm::Instruction * branch_inst = BB.getTerminator();
+                    if(branch_inst){
+                        if(branch_inst->getOpcode() != Instruction::Br){
+                            errs()<<"fatal split BB terminator is not Br\n";  
+                        }
+                    }else{
+                        errs()<<"fatal split BB has not terminator\n";
+                        abort();
+                    }
+                    IRBuilder<> Builder(branch_inst);
+                    llvm::Type *voidty = Type::getVoidTy(M.getContext());
+                    std::vector<llvm::Type *> PArray = {};
+                    PArray.push_back(Builder.getPtrTy());
+                    PArray.push_back(Builder.getPtrTy());
+                    PArray.push_back(Builder.getPtrTy());
+                    llvm::FunctionType *FastPathFTy = llvm::FunctionType::get(voidty, PArray, false);
+                    StringRef AsmString = "mov $1, $0;shr $$32, $0;cmpq %r15, $0;je ${2:l};1:;";
+                    StringRef constraints = "r,r,X,~{dx},~{dirflag},~{fpsr},~{flags}";
+                    llvm::BlockAddress * BA = BlockAddress::get(normal_bb);
+                    llvm::InlineAsm *IA = llvm::InlineAsm::get(FastPathFTy,AsmString,constraints,true,InlineAsm::AD_ATT); 
+                    std::vector<Value *> IAArgs = {};
+                    IAArgs.push_back(UndefValue::get(Builder.getPtrTy()));
+                    IAArgs.push_back(ST->getPointerOperand());
+                    IAArgs.push_back(BA);
+                    llvm::CallBrInst *Result =Builder.CreateCallBr(IA, slowpathBB, normal_bb, IAArgs);
+                    //end of fast path call
+
+                    I.SXFI_rewritten = true;
+                    i=0;
+                    BBs.clear();
+                    for (BasicBlock &BB : F)
+                        BBs.push_back(&BB);
+                    break;
+                }else if(I.getOpcode() == Instruction::Call && !I.SXFI_rewritten){
+                    llvm::CallInst *Call = llvm::dyn_cast<CallInst>(&I);
+                    if(!Call->isIndirectCall())
+                        continue;
+
+                    IRBuilder<> IRB(&(I));
+                    std::vector<llvm::Value *> Args;
+                    Args.push_back(Call->getOperand(0));
+                    llvm::CallInst * cap_check =  IRB.CreateCall(FMemWrtChk, Args);
+
+                    I.SXFI_rewritten = true;
+                }else if(I.getOpcode() == Instruction::IndirectBr && !I.SXFI_rewritten){
+                    llvm::IndirectBrInst *IBr = llvm::dyn_cast<IndirectBrInst>(&I);
+
+                    IRBuilder<> IRB(&(I));
+                    std::vector<llvm::Value *> Args;
+                    Args.push_back(IBr->getOperand(0));
+                    llvm::CallInst * cap_check =  IRB.CreateCall(FMemWrtChk, Args);
+
+                    I.SXFI_rewritten = true;
                 }
             }
         }
-        // llvm::raw_fd_ostream OSS("/users/BUXD/llvm-SFI/ll.sfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
-        // F.print(OSS);
-        // OSS.close();
+        llvm::raw_fd_ostream OSS("ll.sfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
+        F.print(OSS);
+        OSS.close();
     }
-
     return PreservedAnalyses::all();
 }

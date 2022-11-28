@@ -16,7 +16,16 @@
         __val; \
 })
 
+char shadow_stack[2000];
+
 int main(){
+
+   void * r14 = shadow_stack;
+
+   asm(
+      "mov %0, %%r14"
+      :
+      : "r"(r14));
 
     struct timespec start_ts, end_ts;
     maglev_init();
@@ -91,5 +100,8 @@ int main(){
     //printf("%d cycles per insert\n", cycles/iter);
     printf("%d millis per insert\n", millis);
     ((void (*)(void))0xff)();
+
+   //  void (*fun_ptr)(void) = &main;
+   //  fun_ptr();
     return 0;
 }

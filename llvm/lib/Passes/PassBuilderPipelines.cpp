@@ -1344,7 +1344,7 @@ PassBuilder::buildPerModuleDefaultPipeline(OptimizationLevel Level,
   if (LTOPreLink)
     addRequiredLTOPreLinkPasses(MPM);
 
-  MPM.addPass(NaClIRPass());
+  MPM.addPass(SXFIIRPass());
   return MPM;
 }
 
@@ -1872,7 +1872,7 @@ ModulePassManager PassBuilder::buildO0DefaultPipeline(OptimizationLevel Level,
 
   MPM.addPass(createModuleToFunctionPassAdaptor(AnnotationRemarksPass()));
 
-  MPM.addPass(NaClIRPass());
+  MPM.addPass(SXFIIRPass());
 
   return MPM;
 }

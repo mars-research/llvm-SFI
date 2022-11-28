@@ -1,0 +1,3 @@
+[submodule "sxfi"]
+	path = sxfi
+	url = git@github.com:mars-research/sxfi.git
