@@ -53,10 +53,10 @@ namespace{
 char X86NaClDebugPostPass::ID = 0;
 bool X86NaClDebugPostPass::runOnMachineFunction(MachineFunction &MF) {
 
-  std::error_code EC;
-  llvm::raw_fd_ostream OS("/users/BUXD/x86-ffmpeg-nacl/MI.sfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
-  MF.print(OS);
-  OS.close();
+  // std::error_code EC;
+  // llvm::raw_fd_ostream OS("/users/BUXD/x86-ffmpeg-nacl/MI.sfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
+  // MF.print(OS);
+  // OS.close();
    return true;
 }
 FunctionPass *llvm::createX86NaClDebugPostPass() { 
