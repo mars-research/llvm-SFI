@@ -116,8 +116,8 @@ PreservedAnalyses SXFIIRPass::run(Module &M,
                     PArray.push_back(Builder.getPtrTy());
                     PArray.push_back(Builder.getPtrTy());
                     llvm::FunctionType *FastPathFTy = llvm::FunctionType::get(voidty, PArray, false);
-                    StringRef AsmString = "mov $1, $0;shr $$32, $0;cmpq %r15, $0;je ${2:l};1:;";
-                    StringRef constraints = "r,r,X,~{dx},~{dirflag},~{fpsr},~{flags}";
+                    StringRef AsmString = "mov $1, $0;shr $$32, $0;cmpq %r15, $0;jne ${2:l};1:;";
+                    StringRef constraints = "r,r,X,~{ax},~{dirflag},~{fpsr},~{flags}";
                     llvm::BlockAddress * BA = BlockAddress::get(normal_bb);
                     llvm::InlineAsm *IA = llvm::InlineAsm::get(FastPathFTy,AsmString,constraints,true,InlineAsm::AD_ATT); 
                     std::vector<Value *> IAArgs = {};
@@ -186,8 +186,8 @@ PreservedAnalyses SXFIIRPass::run(Module &M,
                     PArray.push_back(Builder.getPtrTy());
                     PArray.push_back(Builder.getPtrTy());
                     llvm::FunctionType *FastPathFTy = llvm::FunctionType::get(voidty, PArray, false);
-                    StringRef AsmString = "mov $1, $0;shr $$32, $0;cmpq %r15, $0;je ${2:l};1:;";
-                    StringRef constraints = "r,r,X,~{dx},~{dirflag},~{fpsr},~{flags}";
+                    StringRef AsmString = "mov $1, $0;shr $$32, $0;cmpq %r15, $0;jne ${2:l};1:;";
+                    StringRef constraints = "r,r,X,~{ax},~{dirflag},~{fpsr},~{flags}";
                     llvm::BlockAddress * BA = BlockAddress::get(normal_bb);
                     llvm::InlineAsm *IA = llvm::InlineAsm::get(FastPathFTy,AsmString,constraints,true,InlineAsm::AD_ATT); 
                     std::vector<Value *> IAArgs = {};
