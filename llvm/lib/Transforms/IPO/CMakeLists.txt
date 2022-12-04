@@ -2,6 +2,7 @@ add_llvm_component_library(LLVMipo
   AlwaysInliner.cpp
   Annotation2Metadata.cpp
   ArgumentPromotion.cpp
+  PACIRPass.cpp
   Attributor.cpp
   AttributorAttributes.cpp
   BarrierNoopPass.cpp
