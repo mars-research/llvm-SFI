@@ -419,7 +419,7 @@ void MCObjectStreamer::emitInstruction(const MCInst &Inst,
                                        const MCSubtargetInfo &STI) {
 
   if(NaClCounter + GetInstEncodingLen(Inst, STI) > 32){
-    emitCodeAlignment(4, &STI);
+    emitCodeAlignment(32, &STI);
     NaClCounter = 0;
   }
   NaClCounter = (NaClCounter + GetInstEncodingLen(Inst, STI)) % 32;
