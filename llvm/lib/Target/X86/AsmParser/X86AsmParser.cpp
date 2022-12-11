@@ -4030,7 +4030,8 @@ void X86AsmParser::emitInstruction(MCInst &Inst, OperandVector &Operands,
                                    MCStreamer &Out) {
 
   if(Inst.getNumOperands() >=2){
-     if(Inst.getOperand(0).getReg() == X86::NaclStartBundle) {
+    if((Inst.getOperand(0).isReg())){
+      if(Inst.getOperand(0).getReg() == X86::NaclStartBundle) {
       //Out.emitCodeAlignment(32, &getSTI(), 0);
       Out.Bundle_Started = true;
       return;    
@@ -4039,6 +4040,8 @@ void X86AsmParser::emitInstruction(MCInst &Inst, OperandVector &Operands,
       Out.Bundle_Started = false;
       return;    
     }
+    }
+
   }
 
   if (LVIInlineAsmHardening &&

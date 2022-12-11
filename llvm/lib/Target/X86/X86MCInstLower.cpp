@@ -2420,7 +2420,8 @@ void X86AsmPrinter::CheckBundleInlineAsm(const MachineInstr *MI){
   MCInst TmpInst;
   MCInstLowering.Lower(next, TmpInst);
   bundle_size += OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo());
-  while (next = next->getNextNode()){
+  while (next->getNextNode()){
+    next = next->getNextNode();
     if (next->isDebugInstr() || next->isCFIInstruction()|| next->isKill())
       continue;
 
@@ -2446,6 +2447,7 @@ void X86AsmPrinter::CheckBundleInlineAsm(const MachineInstr *MI){
 }
 
 void X86AsmPrinter::CheckBundle(const MachineInstr *MI){
+  
   if(MI->getFlag(MachineInstr::NaclStartBundle)){
     X86MCInstLower MCInstLowering(*MF, *this);
     int bundle_size = 0;
@@ -2454,9 +2456,15 @@ void X86AsmPrinter::CheckBundle(const MachineInstr *MI){
     MCInst TmpInst;
     MCInstLowering.Lower(next, TmpInst);
     bundle_size += OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo());
-    while (next = next->getNextNode()){
-      if (next->isDebugInstr() || next->isCFIInstruction()|| next->isKill())
+    while (next->getNextNode()){
+      next = next->getNextNode();
+      if (next->isDebugInstr() || next->isCFIInstruction()|| next->isKill() ||next->isInlineAsm())
         continue;
+
+      //next->print(errs());
+      MCInst TmpInst;
+      MCInstLowering.Lower(next, TmpInst);
+      bundle_size += OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo());
       if(next->getFlag(MachineInstr::NaclEndBundle)){
         if(32 - OutStreamer->NaClCounter < bundle_size){
           //errs()<<"emitting padding for ret/call bundle\n";
@@ -2467,9 +2475,6 @@ void X86AsmPrinter::CheckBundle(const MachineInstr *MI){
       }
 
       //next->print(errs());
-      MCInst TmpInst;
-      MCInstLowering.Lower(next, TmpInst);
-      bundle_size += OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo());
     }
     
   }
@@ -2758,6 +2763,8 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
     // after it.
     SMShadowTracker.emitShadowPadding(*OutStreamer, getSubtargetInfo());
     // Then emit the call
+    // MI->print(errs());
+    // errs()<<"\n";
     if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<32){
       emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
     }else if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())>32){
