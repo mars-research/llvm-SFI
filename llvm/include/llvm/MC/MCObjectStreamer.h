@@ -98,6 +98,8 @@ public:
     F->setParent(CurSection);
   }
 
+  int64_t GetInstEncodingLen(const MCInst &Inst, const MCSubtargetInfo &STI) override;
+
   /// Get a data fragment to write into, creating a new one if the current
   /// fragment is not a data fragment.
   /// Optionally a \p STI can be passed in so that a new fragment is created

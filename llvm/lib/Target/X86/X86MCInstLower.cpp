@@ -2412,11 +2412,49 @@ static void addConstantComments(const MachineInstr *MI,
   }
 }
 
+
+void X86AsmPrinter::CheckBundle(const MachineInstr *MI){
+  
+  if(MI->getFlag(MachineInstr::NaclStartBundle)){
+    X86MCInstLower MCInstLowering(*MF, *this);
+    int bundle_size = 0;
+    const MachineInstr* next = MI;
+   // MI->print(errs());
+    MCInst TmpInst;
+    MCInstLowering.Lower(next, TmpInst);
+    bundle_size += OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo());
+    while (next->getNextNode()){
+      next = next->getNextNode();
+      if (next->isDebugInstr() || next->isCFIInstruction()|| next->isKill() ||next->isInlineAsm())
+        continue;
+
+      //next->print(errs());
+      MCInst TmpInst;
+      MCInstLowering.Lower(next, TmpInst);
+      bundle_size += OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo());
+      if(next->getFlag(MachineInstr::NaclEndBundle)){
+        if(32 - OutStreamer->NaClCounter < bundle_size){
+          //errs()<<"emitting padding for ret/call bundle\n";
+          OutStreamer->emitCodeAlignment(32, &getSubtargetInfo());
+          OutStreamer->reset_counter();
+          return;
+        }
+      }
+
+      //next->print(errs());
+    }
+    
+  }
+  
+}
+
 void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
   // FIXME: Enable feature predicate checks once all the test pass.
   // X86_MC::verifyInstructionPredicates(MI->getOpcode(),
   //                                     Subtarget->getFeatureBits());
-
+  // if(OutStreamer->Bundle_Started){
+  //   CheckBundleInlineAsm(MI);
+  // }
   X86MCInstLower MCInstLowering(*MF, *this);
   const X86RegisterInfo *RI =
       MF->getSubtarget<X86Subtarget>().getRegisterInfo();
@@ -2673,19 +2711,37 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
 
   MCInst TmpInst;
   MCInstLowering.Lower(MI, TmpInst);
+  CheckBundle(MI);
 
   // Stackmap shadows cannot include branch targets, so we can count the bytes
   // in a call towards the shadow, but must ensure that the no thread returns
   // in to the stackmap shadow.  The only way to achieve this is if the call
   // is at the end of the shadow.
   if (MI->isCall()) {
+    //nacl TODO fix force all the jcc and jmp to be 32 bits so we know the length of instruction right now...
+      // if(MI->getMF()->getName() == "ff_remove_stream"){
+      //   errs()<<"ff_remove_stream call OutStreamer->NaClCounter:"<<OutStreamer->NaClCounter<<" len: "<<OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<<"\n";
+      //   MI->print(errs());
+      //   MI->getMF()->print(errs());
+      // }
     // Count then size of the call towards the shadow
     SMShadowTracker.count(TmpInst, getSubtargetInfo(), CodeEmitter.get());
     // Then flush the shadow so that we fill with nops before the call, not
     // after it.
     SMShadowTracker.emitShadowPadding(*OutStreamer, getSubtargetInfo());
     // Then emit the call
+    // MI->print(errs());
+    // errs()<<"\n";
+    if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<32){
+      emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
+    }else if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())>32){
+      OutStreamer->emitCodeAlignment(32,&getSubtargetInfo());
+      OutStreamer->NaClCounter = 0;
+      emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
+    }
     OutStreamer->emitInstruction(TmpInst, getSubtargetInfo());
+    OutStreamer->emitCodeAlignment(32,&getSubtargetInfo());
+    OutStreamer->NaClCounter = 0;
     return;
   }
 
