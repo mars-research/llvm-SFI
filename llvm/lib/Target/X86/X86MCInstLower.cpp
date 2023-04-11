@@ -2412,33 +2412,42 @@ static void addConstantComments(const MachineInstr *MI,
   }
 }
 
-
 void X86AsmPrinter::CheckBundle(const MachineInstr *MI){
   
   if(MI->getFlag(MachineInstr::NaclStartBundle)){
     X86MCInstLower MCInstLowering(*MF, *this);
     int bundle_size = 0;
     const MachineInstr* next = MI;
-   // MI->print(errs());
+    //errs()<<"\n\nOutStreamer->NaClCounter :"<<OutStreamer->NaClCounter<<"\n";
     MCInst TmpInst;
     MCInstLowering.Lower(next, TmpInst);
     bundle_size += OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo());
+    
+    // errs()<<"Instruction: ";
+    // MI->print(errs());
+    // errs()<<"size: "<<OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<<"\n";
+    
     while (next->getNextNode()){
       next = next->getNextNode();
       if (next->isDebugInstr() || next->isCFIInstruction()|| next->isKill() ||next->isInlineAsm())
         continue;
-
-      //next->print(errs());
+      
       MCInst TmpInst;
       MCInstLowering.Lower(next, TmpInst);
       bundle_size += OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo());
+      
+      // errs()<<"Instruction: ";
+      // next->print(errs());
+      // errs()<<"size: "<< OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<<"\n";
+
       if(next->getFlag(MachineInstr::NaclEndBundle)){
-        if(32 - OutStreamer->NaClCounter < bundle_size){
+        if(OutStreamer->NaClCounter + bundle_size > 32){
           //errs()<<"emitting padding for ret/call bundle\n";
           OutStreamer->emitCodeAlignment(32, &getSubtargetInfo());
           OutStreamer->reset_counter();
-          return;
+          
         }
+        return;
       }
 
       //next->print(errs());
@@ -2447,7 +2456,7 @@ void X86AsmPrinter::CheckBundle(const MachineInstr *MI){
   }
   
 }
-
+bool bundle = true;
 void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
   // FIXME: Enable feature predicate checks once all the test pass.
   // X86_MC::verifyInstructionPredicates(MI->getOpcode(),
@@ -2455,6 +2464,9 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
   // if(OutStreamer->Bundle_Started){
   //   CheckBundleInlineAsm(MI);
   // }
+
+  //MI->print(errs());
+
   X86MCInstLower MCInstLowering(*MF, *this);
   const X86RegisterInfo *RI =
       MF->getSubtarget<X86Subtarget>().getRegisterInfo();
@@ -2711,7 +2723,8 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
 
   MCInst TmpInst;
   MCInstLowering.Lower(MI, TmpInst);
-  CheckBundle(MI);
+  if(bundle)
+    CheckBundle(MI);
 
   // Stackmap shadows cannot include branch targets, so we can count the bytes
   // in a call towards the shadow, but must ensure that the no thread returns
@@ -2732,16 +2745,20 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
     // Then emit the call
     // MI->print(errs());
     // errs()<<"\n";
-    if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<32){
-      emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
-    }else if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())>32){
-      OutStreamer->emitCodeAlignment(32,&getSubtargetInfo());
-      OutStreamer->NaClCounter = 0;
-      emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
+    if(bundle){
+      if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<32){
+        emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
+      }else if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())>32){
+        OutStreamer->emitCodeAlignment(32,&getSubtargetInfo());
+        OutStreamer->NaClCounter = 0;
+        emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
+      }
     }
     OutStreamer->emitInstruction(TmpInst, getSubtargetInfo());
-    OutStreamer->emitCodeAlignment(32,&getSubtargetInfo());
-    OutStreamer->NaClCounter = 0;
+    if(bundle){
+      OutStreamer->emitCodeAlignment(32,&getSubtargetInfo());
+      OutStreamer->NaClCounter = 0;
+    }
     return;
   }
 

@@ -507,9 +507,9 @@ public:
   }
   MachineOperand& getOperand(unsigned i) {
     if(!(i < getNumOperands())){
-      this->print(errs());
-      errs()<<this->isBarrier();
-      errs()<<"\n\n\nhere\n\n\n";
+      // this->print(errs());
+      // errs()<<this->isBarrier();
+      // errs()<<"\n\n\nhere\n\n\n";
     }
     assert(i < getNumOperands() && "getOperand() out of range!");
     return Operands[i];

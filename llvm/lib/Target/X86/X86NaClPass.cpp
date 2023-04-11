@@ -123,6 +123,28 @@ static bool isPopPush(MachineInstr &MI){
     return false;
 }
 
+static bool skip(MachineInstr &MI){
+  switch (MI.getOpcode()) {
+    case X86::MOV8mr_NOREX:
+    case X86::MOV8rm_NOREX:
+    case X86::MOV8rr_NOREX:
+    case X86::MOVSX32rm8_NOREX:
+    case X86::MOVSX32rr8_NOREX:
+    case X86::MOVZX32rm8_NOREX:
+    case X86::MOVZX32rr8_NOREX:
+    case X86::MOV8mr:
+    case X86::MOV8rm:
+    case X86::MOV8rr:
+    case X86::MOVSX32rm8:
+    case X86::MOVSX32rr8:
+    case X86::MOVZX32rm8:
+    case X86::MOVZX32rr8:
+    case X86::TEST8ri:
+      return true;
+    }
+  return false;
+}
+
 char X86NaClPass::ID = 0;
 bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
     //Function boundary
@@ -137,6 +159,7 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
       LiveRegs.addLiveOuts(MBB);
 
       for (MachineInstr &MI : MBB) {
+        //MI.print(errs());
         SmallVector<std::pair<MCPhysReg, const MachineOperand *>, 8> Clobbers;
         LiveRegs.stepForward(MI,Clobbers);
 
@@ -167,7 +190,7 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
 
           MI.setFlags(MachineInstr::NaclEndBundle);
         }
-        else if(MI.mayLoad() || MI.mayStore()){
+        else if(MI.mayLoad() || MI.mayStore() || skip(MI)){
           //some weird instructions will load and branch at the same time, skip them
           if(MI.isCall() || MI.isBranch())
             continue;
@@ -190,13 +213,16 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
             const MCInstrDesc &Desc = MI.getDesc();
             int MemRefBeginIdx = X86II::getMemoryOperandNo(Desc.TSFlags);
             MemRefBeginIdx += X86II::getOperandBias(Desc);
-            
+            // MI.print(errs());
+            // errs()<<MI.getNumOperands()<<"\n";
+            // if(MI.getNumOperands() <= 4)
+            //   continue;
             MachineOperand &Dest =    MI.getOperand(0);
             MachineOperand &Base =    MI.getOperand(MemRefBeginIdx + X86::AddrBaseReg);
-            MachineOperand &Scale =   MI.getOperand(MemRefBeginIdx + X86::AddrScaleAmt);
-            MachineOperand &Index =   MI.getOperand(MemRefBeginIdx + X86::AddrIndexReg);
-            MachineOperand &Offset =  MI.getOperand(MemRefBeginIdx + X86::AddrDisp);
-            MachineOperand &Segment = MI.getOperand(MemRefBeginIdx + X86::AddrSegmentReg);
+            // MachineOperand &Scale =   MI.getOperand(MemRefBeginIdx + X86::AddrScaleAmt);
+            // MachineOperand &Index =   MI.getOperand(MemRefBeginIdx + X86::AddrIndexReg);
+            // MachineOperand &Offset =  MI.getOperand(MemRefBeginIdx + X86::AddrDisp);
+            // MachineOperand &Segment = MI.getOperand(MemRefBeginIdx + X86::AddrSegmentReg);
           //   errs()<<"Dest: "<<Dest<<"\n";
           //   errs()<<"Base: "<<Base<<"\n";
           //   errs()<<"Scale: "<<Scale<<"\n";
@@ -205,53 +231,53 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
           //   errs()<<"Segment: "<<Segment<<"\n\n";
 
             
-            if(!Base.isReg()){
-              errs()<<"\n err "<<MI;
-              continue;
-            }
-            if(!Index.isReg()){
-              errs()<<"\n err "<<MI;
-              continue;
-            }
-            if(!Scale.isImm()){
-              errs()<<"\n err "<<MI;
-              continue;
-            }
-            if(!Offset.isImm()){
-              errs()<<"\n err "<<MI;
-              continue;
-            }
+            // if(!Base.isReg()){
+            //   errs()<<"\n err "<<MI;
+            //   continue;
+            // }
+            // if(!Index.isReg()){
+            //   errs()<<"\n err "<<MI;
+            //   continue;
+            // }
+            // if(!Scale.isImm()){
+            //   errs()<<"\n err "<<MI;
+            //   continue;
+            // }
+            // if(!Offset.isImm()){
+            //   errs()<<"\n err "<<MI;
+            //   continue;
+            // }
 
             //skip rip relative load/store
-            if(Base.getReg() == X86::RIP || Index.getReg() == X86::RIP)
-              continue;
+            // if(Base.getReg() == X86::RIP || Index.getReg() == X86::RIP)
+            //   continue;
 
-            bool base_reg = true;
-            bool index_reg = true;
-            if(Base.getReg() == X86::NoRegister)
-              base_reg = false;
-            if(Index.getReg() == X86::NoRegister)
-              index_reg = false;
-          //   errs()<<"Dest: "<<Dest<<"\n";
-          //   errs()<<"Base: "<<Base<<"\n";
-          //   errs()<<"base_reg: "<<base_reg<<"\n";
-          //   errs()<<"Scale: "<<Scale<<"\n";
-          //   errs()<<"Index: "<<Index<<"\n";
-          //   errs()<<"index_reg: "<<index_reg<<"\n";
-          //  errs()<<"Offset: "<<Offset<<"\n";
-          //   errs()<<"Segment: "<<Segment<<"\n\n";
-            if(base_reg && !index_reg){
-              BuildMI(MBB, MI, DL, TII->get(X86::MOV64rr)) 
-		           .addReg(Base.getReg(), RegState::Define)
-               .addReg(Base.getReg(), RegState::Kill)
-               .addImm(0x0)
-               .setMIFlags(MachineInstr::NaclStartBundle);
+          //   bool base_reg = true;
+          //   bool index_reg = true;
+          //   if(Base.getReg() == X86::NoRegister)
+          //     base_reg = false;
+          //   if(Index.getReg() == X86::NoRegister)
+          //     index_reg = false;
+          // //   errs()<<"Dest: "<<Dest<<"\n";
+          // //   errs()<<"Base: "<<Base<<"\n";
+          // //   errs()<<"base_reg: "<<base_reg<<"\n";
+          // //   errs()<<"Scale: "<<Scale<<"\n";
+          // //   errs()<<"Index: "<<Index<<"\n";
+          // //   errs()<<"index_reg: "<<index_reg<<"\n";
+          // //  errs()<<"Offset: "<<Offset<<"\n";
+          // //   errs()<<"Segment: "<<Segment<<"\n\n";
+          //   if(base_reg && !index_reg){
+          //     BuildMI(MBB, MI, DL, TII->get(X86::MOV64rr)) 
+		      //      .addReg(Base.getReg(), RegState::Define)
+          //      .addReg(Base.getReg(), RegState::Kill)
+          //      .addImm(0x0)
+          //      .setMIFlags(MachineInstr::NaclStartBundle);
 
-              Index.setReg(X86::R15);
-              Scale.setImm(1);
-              MI.setFlags(MachineInstr::NaclEndBundle);
-              continue;
-            }
+          //     Index.setReg(X86::R15);
+          //     Scale.setImm(1);
+          //     MI.setFlags(MachineInstr::NaclEndBundle);
+          //     continue;
+          //   }
             // if(!base_reg && index_reg){
             //   BuildMI(MBB, MI, DL, TII->get(X86::MOV64rr)) 
 		        //   .addReg(Index.getReg(), RegState::Define)
@@ -266,21 +292,51 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
             //   continue;
             // }
 
-            BuildMI(MBB, MI, DL, TII->get(X86::LEA64r), X86::R10)
-		        .addReg(Base.getReg()) //base
-            .addImm(Scale.getImm())
-            .addReg(Index.getReg())
-            .addImm(Offset.getImm())
-            .addReg(Segment.getReg())
-            .setMIFlags(MachineInstr::NaclStartBundle);
+            // BuildMI(MBB, MI, DL, TII->get(X86::LEA64r), X86::R10)
+		        // .addReg(Base.getReg()) //base
+            // .addImm(Scale.getImm())
+            // .addReg(Index.getReg())
+            // .addImm(Offset.getImm())
+            // .addReg(Segment.getReg())
+            // .setMIFlags(MachineInstr::NaclStartBundle);
 
+            // BuildMI(MBB, MI, DL, TII->get(X86::LEA64r), X86::R10)
+		        // .addReg(Base.getReg()) //base
+            // .addImm(Scale.getImm())
+            // .addReg(Index.getReg())
+            // .addImm(Offset.getImm())
+            // .addReg(Segment.getReg())
+            // .setMIFlags(MachineInstr::NaclStartBundle);
+              // BuildMI(MBB, MI, DL, TII->get(X86::MOV64rr)) 
+		          //  .addReg(X86::R10, RegState::Define)
+              //  .addReg(X86::R10, RegState::Kill)
+              //  .addImm(0x0)
+              //  .setMIFlags(MachineInstr::NaclStartBundle);
+              if(MI.getNumOperands() > MemRefBeginIdx + X86::AddrBaseReg){
+              BuildMI(MBB, MI, DL, TII->get(X86::LEA64r), Base.getReg())
+              .addReg(Base.getReg()) //base
+              .addImm(1)
+              .addReg(X86::NoRegister)
+              .addImm(0)
+              .addReg(X86::NoRegister)
+              .setMIFlags(MachineInstr::NaclStartBundle);
+              }else{
+              BuildMI(MBB, MI, DL, TII->get(X86::LEA64r), X86::R10)
+              .addReg(X86::R15) //base
+              .addImm(1)
+              .addReg(X86::R10)
+              .addImm(0)
+              .addReg(X86::NoRegister)
+              .setMIFlags(MachineInstr::NaclStartBundle);
+              }
 
             
-            Base.setReg(X86::R10);
-            Scale.setImm(1);
-            Index.setReg(X86::R15);
-            Offset.setImm(0);
-            Segment.setReg(0);
+            
+            // Base.setReg(X86::R10);
+            // Scale.setImm(1);
+            // Index.setReg(X86::R15);
+            // Offset.setImm(0);
+            // Segment.setReg(0);
             MI.setFlags(MachineInstr::NaclEndBundle);
             //errs()<<"after :"<<MI;
         }
