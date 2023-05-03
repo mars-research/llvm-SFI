@@ -696,6 +696,16 @@ void tools::gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
 
   Args.AddAllArgs(CmdArgs, options::OPT_T);
 
+  StringRef DefaultPrefixDirs(PREFIX_DIRS);
+  if (DefaultPrefixDirs != "") {
+    SmallVector<StringRef, 5> dirs;
+    DefaultPrefixDirs.split(dirs, ":");
+    for (StringRef dir : dirs) {
+      CmdArgs.push_back("-L");
+      CmdArgs.push_back(Args.MakeArgString(dir));
+    }
+  }
+
   const char *Exec = Args.MakeArgString(ToolChain.GetLinkerPath());
   C.addCommand(std::make_unique<Command>(JA, *this,
                                          ResponseFileSupport::AtFileCurCP(),
