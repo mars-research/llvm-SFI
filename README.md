@@ -1,5 +1,10 @@
 # To Build 
 cmake -S llvm -B build -G Ninja -DLLVM_ENABLE_PROJECTS='clang;lld' -DCMAKE_BUILD_TYPE=MinSizeRel -DLLVM_TARGETS_TO_BUILD="AArch64"
+
+cmake $cmakeFlags -Sllvm -Bbuild -DCMAKE_INSTALL_PREFIX=""
+cd build
+cmake --build . --target install
+
 # The LLVM Compiler Infrastructure
 
 This directory and its sub-directories contain the source code for LLVM,
