@@ -1,6 +1,7 @@
 add_llvm_component_library(LLVMipo
   AlwaysInliner.cpp
   Annotation2Metadata.cpp
+  CheriIRPass.cpp
   ArgumentPromotion.cpp
   Attributor.cpp
   AttributorAttributes.cpp
