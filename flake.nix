@@ -21,7 +21,7 @@
         "-DC_INCLUDE_DIRS=${pkgs.stdenv.cc.libc.dev}/include"
         "-DPREFIX_DIRS=${pkgs.stdenv.cc.libc}/lib"
         "-DLLVM_ENABLE_PROJECTS='clang;lld'"
-        "-DLLVM_ENABLE_RUNTIMES=openmp,libc"
+        "-DLLVM_ENABLE_RUNTIMES=openmp;libc"
         "-DCMAKE_BUILD_TYPE=MinSizeRel"
         "-DLLVM_TARGETS_TO_BUILD=X86"
       ];
