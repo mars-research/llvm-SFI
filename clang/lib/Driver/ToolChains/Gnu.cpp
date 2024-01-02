@@ -477,12 +477,12 @@ void tools::gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     if (Args.hasArg(options::OPT_rdynamic))
       CmdArgs.push_back("-export-dynamic");
 
-    if (!Args.hasArg(options::OPT_shared) && !IsStaticPIE &&
-        !Args.hasArg(options::OPT_r)) {
-      CmdArgs.push_back("-dynamic-linker");
-      CmdArgs.push_back(Args.MakeArgString(Twine(D.DyldPrefix) +
-                                           ToolChain.getDynamicLinker(Args)));
-    }
+    // if (!Args.hasArg(options::OPT_shared) && !IsStaticPIE &&
+    //     !Args.hasArg(options::OPT_r)) {
+    //   CmdArgs.push_back("-dynamic-linker");
+    //   CmdArgs.push_back(Args.MakeArgString(Twine(D.DyldPrefix) +
+    //                                        ToolChain.getDynamicLinker(Args)));
+    // }
   }
 
   CmdArgs.push_back("-o");
