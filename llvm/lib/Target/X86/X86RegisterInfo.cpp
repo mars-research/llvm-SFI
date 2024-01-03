@@ -536,10 +536,10 @@ BitVector X86RegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   Reserved.set(X86::R15D);//NaCl
   Reserved.set(X86::R15W);//NaCl
   Reserved.set(X86::R15B);//NaCl
-  Reserved.set(X86::R10);//NaCl
-  Reserved.set(X86::R10D);//NaCl
-  Reserved.set(X86::R10W);//NaCl
-  Reserved.set(X86::R10B);//NaCl
+  // Reserved.set(X86::R10);//NaCl
+  // Reserved.set(X86::R10D);//NaCl
+  // Reserved.set(X86::R10W);//NaCl
+  // Reserved.set(X86::R10B);//NaCl
 
   // Set the floating point control register as reserved.
   Reserved.set(X86::FPCW);
