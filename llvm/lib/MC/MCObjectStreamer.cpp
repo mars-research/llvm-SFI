@@ -418,12 +418,14 @@ int64_t MCObjectStreamer::GetInstEncodingLen(const MCInst &Inst, const MCSubtarg
 void MCObjectStreamer::emitInstruction(const MCInst &Inst,
                                        const MCSubtargetInfo &STI) {
 
+#ifdef ColorGuard_BUNDLE
   if(NaClCounter + GetInstEncodingLen(Inst, STI) > 32){
     emitCodeAlignment(32, &STI);
     NaClCounter = 0;
   }
   NaClCounter = (NaClCounter + GetInstEncodingLen(Inst, STI)) % 32;
-  
+#endif 
+
   const MCSection &Sec = *getCurrentSectionOnly();
   if (Sec.isVirtualSection()) {
     getContext().reportError(Inst.getLoc(), Twine(Sec.getVirtualSectionKind()) +

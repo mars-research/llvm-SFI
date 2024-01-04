@@ -37,32 +37,33 @@
 #include <functional>
 #include <iterator>
 #include <limits>
+
 using namespace llvm;
 
 
 namespace{
-    class X86NaClDebugPostPass : public MachineFunctionPass{
+    class X86CGDebugPrePass : public MachineFunctionPass{
     public:
         static char ID;
         llvm::raw_fd_ostream *OS;
-        X86NaClDebugPostPass() : MachineFunctionPass(ID){}
-        StringRef getPassName() const override { return "X86NaClDebugPostPass"; }
+        X86CGDebugPrePass() : MachineFunctionPass(ID){}
+        StringRef getPassName() const override { return "X86CGDebugPrePass"; }
         bool runOnMachineFunction(MachineFunction &MF) override;
     };
 }
-char X86NaClDebugPostPass::ID = 0;
-bool X86NaClDebugPostPass::runOnMachineFunction(MachineFunction &MF) {
+char X86CGDebugPrePass::ID = 0;
+bool X86CGDebugPrePass::runOnMachineFunction(MachineFunction &MF) {
 
   // std::error_code EC;
-  // llvm::raw_fd_ostream OS("/users/BUXD/x86-ffmpeg-nacl/MI.sfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
+  // llvm::raw_fd_ostream OS("/users/BUXD/x86-ffmpeg-nacl/MI.nosfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
   // MF.print(OS);
   // OS.close();
-   return true;
+  return true;
 }
-FunctionPass *llvm::createX86NaClDebugPostPass() { 
+FunctionPass *llvm::createX86CGDebugPrePass() { 
   //  std::error_code EC;
   // //  llvm::raw_fd_ostream OS(
-  // //        "/users/BUXD/llvm-SFI/MI.sfi", EC);
+  // //        "/users/BUXD/llvm-SFI/MI.nosfi", EC);
   // OS.close();
-  return new X86NaClDebugPostPass(); 
+  return new X86CGDebugPrePass(); 
   }

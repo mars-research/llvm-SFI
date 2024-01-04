@@ -46,12 +46,12 @@ static bool google_nacl = false;
 
 
 namespace{
-    class X86NaClPass : public MachineFunctionPass{
+    class X86CGPass : public MachineFunctionPass{
     public:
         static char ID;
         llvm::raw_fd_ostream *OS;
-        X86NaClPass() : MachineFunctionPass(ID){}
-        StringRef getPassName() const override { return "X86NaClPass"; }
+        X86CGPass() : MachineFunctionPass(ID){}
+        StringRef getPassName() const override { return "X86CGPass"; }
         bool runOnMachineFunction(MachineFunction &MF) override;
     };
 }
@@ -145,111 +145,118 @@ static bool skip(MachineInstr &MI){
   return false;
 }
 
-char X86NaClPass::ID = 0;
-bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
-    //Function boundary
-    // return true;
-    MF.setAlignment(Align(32));
+char X86CGPass::ID = 0;
+bool X86CGPass::runOnMachineFunction(MachineFunction &MF) {
+    
+  #ifdef ColorGuard_BUNDLE
+  MF.setAlignment(Align(32));
+  #endif 
 
-    for (MachineBasicBlock &MBB : MF) {
-      //Block boundary
-      MBB.setAlignment(Align(32));
+  for (MachineBasicBlock &MBB : MF) {
 
-      const TargetRegisterInfo *RegInfo = MF.getSubtarget().getRegisterInfo();
-      LivePhysRegs LiveRegs(*RegInfo);
-      LiveRegs.addLiveOuts(MBB);
+    #ifdef ColorGuard_BUNDLE
+    MBB.setAlignment(Align(32));
+    #endif
 
-      for (MachineInstr &MI : MBB) {
-        //MI.print(errs());
-        SmallVector<std::pair<MCPhysReg, const MachineOperand *>, 8> Clobbers;
-        LiveRegs.stepForward(MI,Clobbers);
+    const TargetRegisterInfo *RegInfo = MF.getSubtarget().getRegisterInfo();
+    LivePhysRegs LiveRegs(*RegInfo);
+    LiveRegs.addLiveOuts(MBB);
 
-        //These instruction will not be complied anyways
-        if (MI.isDebugInstr() || MI.isCFIInstruction()|| MI.isKill()||MI.isInlineAsm() || MI.isBarrier() )
-          continue;        
-        
-        const DebugLoc DL = MI.getDebugLoc();
-        const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
+    for (MachineInstr &MI : MBB) {
+      //MI.print(errs());
+      SmallVector<std::pair<MCPhysReg, const MachineOperand *>, 8> Clobbers;
+      LiveRegs.stepForward(MI,Clobbers);
+
+      //These instruction will not be complied anyways
+      if (MI.isDebugInstr() || MI.isCFIInstruction()|| MI.isKill()||MI.isInlineAsm() || MI.isBarrier() )
+        continue;        
+      
+      const DebugLoc DL = MI.getDebugLoc();
+      const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
 
              
-        //enforce RSP before push/pop
-        if(isPopPush(MI)){
-          
-          //for now we don't take care of the stack   
-          //continue;
-          
-          BuildMI(MBB, MI, DL, TII->get(X86::MOV64rr)) 
-		      .addReg(X86::RSP, RegState::Define)
-          .addReg(X86::RSP, RegState::Kill)
-          .addImm(0x0)
-          .setMIFlags(MachineInstr::NaclStartBundle);
+      //enforce RSP before push/pop
+      if(isPopPush(MI)){
+        #ifndef ColorGuard_LDST_CHECK  
+        continue;
+        #endif
+        BuildMI(MBB, MI, DL, TII->get(X86::MOV64rr)) 
+        .addReg(X86::RSP, RegState::Define)
+        .addReg(X86::RSP, RegState::Kill)
+        .addImm(0x0)
+        .setMIFlags(MachineInstr::CGStartBundle);
 
-          BuildMI(MBB, MI, DL, TII->get(X86::AND64rr))
-          .addReg(X86::RSP, RegState::Define)
-          .addReg(X86::RSP, RegState::Kill)
-          .addReg(X86::RSP, RegState::Kill);
+        BuildMI(MBB, MI, DL, TII->get(X86::AND64rr))
+        .addReg(X86::RSP, RegState::Define)
+        .addReg(X86::RSP, RegState::Kill)
+        .addReg(X86::RSP, RegState::Kill);
 
-          MI.setFlags(MachineInstr::NaclEndBundle);
-        }
-        else if(MI.mayLoad() || MI.mayStore() || skip(MI)){
-          //some weird instructions will load and branch at the same time, skip them
-          if(MI.isCall() || MI.isBranch())
-            continue;
+        MI.setFlags(MachineInstr::CGEndBundle);
+      }
+        // else if(MI.mayLoad() || MI.mayStore() || skip(MI)){
+      else if(MI.mayLoad() || MI.mayStore()){
+        #ifndef ColorGuard_LDST_CHECK  
+        continue;
+        #endif
+        //some weird instructions will load and branch at the same time, skip them
+        if(MI.isCall() || MI.isBranch())
+          continue;
 
-          bool Rip_ins = false; 
-          for (const auto &Op : MI.operands()){
-            if(Op.isReg()){
-              if(Op.getReg() == X86::RIP){
-                Rip_ins = true;
-              }
+        bool Rip_ins = false; 
+        for (const auto &Op : MI.operands()){
+          if(Op.isReg()){
+            if(Op.getReg() == X86::RIP){
+              Rip_ins = true;
             }
           }
-          if(Rip_ins)
-            continue;
+        }
+        if(Rip_ins)
+          continue;
 
 
-            int numofop = MI.getNumOperands();
-            if(numofop <= 1)
-              continue;
-            const MCInstrDesc &Desc = MI.getDesc();
-            int MemRefBeginIdx = X86II::getMemoryOperandNo(Desc.TSFlags);
-            MemRefBeginIdx += X86II::getOperandBias(Desc);
+        int numofop = MI.getNumOperands();
+        if(numofop <= 1)
+          continue;
+        const MCInstrDesc &Desc = MI.getDesc();
+        int MemRefBeginIdx = X86II::getMemoryOperandNo(Desc.TSFlags);
+        MemRefBeginIdx += X86II::getOperandBias(Desc);
 
-            if(numofop <= MemRefBeginIdx + X86::AddrSegmentReg)
-              continue;
-            // MI.print(errs());
-            // errs()<<MI.getNumOperands()<<"\n";
-            // if(MI.getNumOperands() <= 4)
-            //   continue;
-            MachineOperand &Dest =    MI.getOperand(0);
-            MachineOperand &Base =    MI.getOperand(MemRefBeginIdx + X86::AddrBaseReg);
-            // MachineOperand &Scale =   MI.getOperand(MemRefBeginIdx + X86::AddrScaleAmt);
-            // MachineOperand &Index =   MI.getOperand(MemRefBeginIdx + X86::AddrIndexReg);
-            // MachineOperand &Offset =  MI.getOperand(MemRefBeginIdx + X86::AddrDisp);
-            MachineOperand &Segment = MI.getOperand(MemRefBeginIdx + X86::AddrSegmentReg);
-          //   errs()<<"Dest: "<<Dest<<"\n";
-          //   errs()<<"Base: "<<Base<<"\n";
-          //   errs()<<"Scale: "<<Scale<<"\n";
-          //   errs()<<"Index: "<<Index<<"\n";
-          //  errs()<<"Offset: "<<Offset<<"\n";
-              // errs()<<"numofop: "<<numofop<< "Segment index: "<<MemRefBeginIdx + X86::AddrSegmentReg<<"\n\n";
+        if(numofop <= MemRefBeginIdx + X86::AddrSegmentReg)
+          continue;
+          MachineOperand &Dest =    MI.getOperand(0);
+          MachineOperand &Base =    MI.getOperand(MemRefBeginIdx + X86::AddrBaseReg);
+          // MachineOperand &Scale =   MI.getOperand(MemRefBeginIdx + X86::AddrScaleAmt);
+          // MachineOperand &Index =   MI.getOperand(MemRefBeginIdx + X86::AddrIndexReg);
+          // MachineOperand &Offset =  MI.getOperand(MemRefBeginIdx + X86::AddrDisp);
+          MachineOperand &Segment = MI.getOperand(MemRefBeginIdx + X86::AddrSegmentReg);
+         //   errs()<<"Dest: "<<Dest<<"\n";
+         //   errs()<<"Base: "<<Base<<"\n";
+         //   errs()<<"Scale: "<<Scale<<"\n";
+         //   errs()<<"Index: "<<Index<<"\n";
+         //  errs()<<"Offset: "<<Offset<<"\n";
+         // errs()<<"numofop: "<<numofop<< "Segment index: "<<MemRefBeginIdx + X86::AddrSegmentReg<<"\n\n";
 
             
-            if(Segment.isReg()){
-              if(Segment.getReg() == X86::NoRegister){
-                 Segment.setReg(X86::GS);
-              }
-                // errs()<<"Segment: "<<Segment<<"\n\n";
-            }else{
-              // errs()<<"Segment is not a register \n\n";
+          if(Segment.isReg()){
+            if(Segment.getReg() == X86::NoRegister){
+              Segment.setReg(X86::GS);
             }
+              // errs()<<"Segment: "<<Segment<<"\n\n";
+          }else{
+            // errs()<<"Segment is not a register \n\n";
+          }
         }
         else if(MI.getOpcode()==X86::RET64){
+
+          #ifndef ColorGuard_RETCALL_CHECK
+          continue;
+          #endif
+
 	        const DebugLoc DL = MI.getDebugLoc();
           const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
 	        BuildMI(MBB, MI, DL, TII->get(X86::POP64r)) 
 		        .addReg(X86::R8, RegState::Define)
-            .setMIFlags(MachineInstr::NaclStartBundle);//R8 is caller saved so it's ok to use it to store the ret addr
+            .setMIFlags(MachineInstr::CGStartBundle);//R8 is caller saved so it's ok to use it to store the ret addr
           BuildMI(MBB, MI, DL, TII->get(X86::OR64ri32))
             .addReg(X86::R8, RegState::Define)
             .addReg(X86::R8, RegState::Kill)
@@ -260,8 +267,13 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
             .addReg(X86::R8, RegState::Kill);
           BuildMI(MBB, MI, DL, TII->get(X86::JMP64r))
             .addReg(X86::R8, RegState::Kill)
-            .setMIFlags(MachineInstr::NaclEndBundle);
+            .setMIFlags(MachineInstr::CGEndBundle);
         }else if(MI.getOpcode() == X86::CALL64r || MI.getOpcode() == X86::JMP64r){
+
+          #ifndef ColorGuard_RETCALL_CHECK
+          continue;
+          #endif
+          
           const DebugLoc DL = MI.getDebugLoc();
           const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
           
@@ -269,12 +281,12 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
             .addReg(MI.getOperand(0).getReg(), RegState::Define)
             .addReg(MI.getOperand(0).getReg(), RegState::Kill)
             .addImm(0x0)
-            .setMIFlags(MachineInstr::NaclStartBundle);
+            .setMIFlags(MachineInstr::CGStartBundle);
         BuildMI(MBB, MI, DL, TII->get(X86::AND64rr))
             .addReg(MI.getOperand(0).getReg(), RegState::Define)
             .addReg(MI.getOperand(0).getReg(), RegState::Kill)
             .addReg(MI.getOperand(0).getReg(), RegState::Kill);
-        MI.setFlags(MachineInstr::NaclEndBundle);
+        MI.setFlags(MachineInstr::CGEndBundle);
         }else{
           const DebugLoc DL = MI.getDebugLoc();
           const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
@@ -294,7 +306,7 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
     }
   return true;
 }
-FunctionPass *llvm::createX86NaClPass() { 
+FunctionPass *llvm::createX86CGPass() { 
 
-  return new X86NaClPass(); 
+  return new X86CGPass(); 
   }

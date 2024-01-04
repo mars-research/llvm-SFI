@@ -112,9 +112,8 @@ public:
     NoMerge      = 1 << 15,             // Passes that drop source location info
                                         // (e.g. branch folding) should skip
                                         // this instruction.
-    NaclStartBundle = 1 << 16,
-    NaclEndBundle = 1 << 17,
-    NaclMiddleBundle = 1 << 18,
+    CGStartBundle = 1 << 16,
+    CGEndBundle = 1 << 17,
   };
 
 private:

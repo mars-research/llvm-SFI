@@ -88,9 +88,9 @@ set(sources
   X86WinEHState.cpp
   X86InsertWait.cpp
 
-  X86NaClPass.cpp
-  X86NaClDebugPrePass.cpp
-  X86NaClDebugPostPass.cpp
+  X86CGPass.cpp
+  X86CGDebugPrePass.cpp
+  X86CGDebugPostPass.cpp
   )
 
 add_llvm_target(X86CodeGen ${sources}

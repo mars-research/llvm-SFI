@@ -2414,7 +2414,7 @@ static void addConstantComments(const MachineInstr *MI,
 
 void X86AsmPrinter::CheckBundle(const MachineInstr *MI){
   
-  if(MI->getFlag(MachineInstr::NaclStartBundle)){
+  if(MI->getFlag(MachineInstr::CGStartBundle)){
     X86MCInstLower MCInstLowering(*MF, *this);
     int bundle_size = 0;
     const MachineInstr* next = MI;
@@ -2440,7 +2440,7 @@ void X86AsmPrinter::CheckBundle(const MachineInstr *MI){
       // next->print(errs());
       // errs()<<"size: "<< OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<<"\n";
 
-      if(next->getFlag(MachineInstr::NaclEndBundle)){
+      if(next->getFlag(MachineInstr::CGEndBundle)){
         if(OutStreamer->NaClCounter + bundle_size > 32){
           //errs()<<"emitting padding for ret/call bundle\n";
           OutStreamer->emitCodeAlignment(32, &getSubtargetInfo());
@@ -2456,7 +2456,6 @@ void X86AsmPrinter::CheckBundle(const MachineInstr *MI){
   }
   
 }
-bool bundle = true;
 void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
   // FIXME: Enable feature predicate checks once all the test pass.
   // X86_MC::verifyInstructionPredicates(MI->getOpcode(),
@@ -2723,9 +2722,10 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
 
   MCInst TmpInst;
   MCInstLowering.Lower(MI, TmpInst);
-  if(bundle)
-    CheckBundle(MI);
-
+  
+  #ifdef ColorGuard_BUNDLE
+  CheckBundle(MI);
+  #endif
   // Stackmap shadows cannot include branch targets, so we can count the bytes
   // in a call towards the shadow, but must ensure that the no thread returns
   // in to the stackmap shadow.  The only way to achieve this is if the call
@@ -2745,20 +2745,21 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
     // Then emit the call
     // MI->print(errs());
     // errs()<<"\n";
-    if(bundle){
-      if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<32){
-        emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
-      }else if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())>32){
-        OutStreamer->emitCodeAlignment(32,&getSubtargetInfo());
-        OutStreamer->NaClCounter = 0;
-        emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
-      }
-    }
-    OutStreamer->emitInstruction(TmpInst, getSubtargetInfo());
-    if(bundle){
+    #ifdef ColorGuard_BUNDLE
+    if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<32){
+      emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
+    }else if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())>32){
       OutStreamer->emitCodeAlignment(32,&getSubtargetInfo());
       OutStreamer->NaClCounter = 0;
+      emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
     }
+    #endif
+    OutStreamer->emitInstruction(TmpInst, getSubtargetInfo());
+
+    #ifdef ColorGuard_BUNDLE
+    OutStreamer->emitCodeAlignment(32,&getSubtargetInfo());
+    OutStreamer->NaClCounter = 0;
+    #endif
     return;
   }
 

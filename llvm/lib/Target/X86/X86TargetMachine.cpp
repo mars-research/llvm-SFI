@@ -564,8 +564,8 @@ void X86PassConfig::addPreEmitPass() {
   addPass(createX86InsertPrefetchPass());
   addPass(createX86InsertX87waitPass());
 
-  addPass(createX86NaClDebugPrePass());
-  addPass(createX86NaClPass());
+  addPass(createX86CGDebugPrePass());
+  addPass(createX86CGPass());
 }
 
 void X86PassConfig::addPreEmitPass2() {
@@ -620,7 +620,7 @@ void X86PassConfig::addPreEmitPass2() {
       return M->getFunction("objc_retainAutoreleasedReturnValue") ||
              M->getFunction("objc_unsafeClaimAutoreleasedReturnValue");
     }));
-    addPass(createX86NaClDebugPostPass());
+    addPass(createX86CGDebugPostPass());
 }
 
 bool X86PassConfig::addPostFastRegAllocRewrite() {
