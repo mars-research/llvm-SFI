@@ -2413,6 +2413,11 @@ static void addConstantComments(const MachineInstr *MI,
 }
 
 void X86AsmPrinter::CheckBundle(const MachineInstr *MI){
+
+  if(MI->getFlag(MachineInstr::Align)){
+    OutStreamer->emitCodeAlignment(32, &getSubtargetInfo());
+    OutStreamer->reset_counter();
+  }
   
   if(MI->getFlag(MachineInstr::CGStartBundle)){
     X86MCInstLower MCInstLowering(*MF, *this);

@@ -114,6 +114,8 @@ public:
                                         // this instruction.
     CGStartBundle = 1 << 16,
     CGEndBundle = 1 << 17,
+    Skip = 1 << 18,
+    Align = 1 << 19,
   };
 
 private:
