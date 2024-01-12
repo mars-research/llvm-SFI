@@ -114,7 +114,8 @@ public:
                                         // this instruction.
     NaclStartBundle = 1 << 16,
     NaclEndBundle = 1 << 17,
-    NaclMiddleBundle = 1 << 18,
+
+    NaclStartPush = 1 << 18,
   };
 
 private:

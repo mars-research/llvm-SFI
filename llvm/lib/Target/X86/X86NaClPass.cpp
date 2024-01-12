@@ -157,14 +157,14 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
       const TargetRegisterInfo *RegInfo = MF.getSubtarget().getRegisterInfo();
       LivePhysRegs LiveRegs(*RegInfo);
       LiveRegs.addLiveOuts(MBB);
-
+      bool Emitting_Rewrite_PushPop = false;
       for (MachineInstr &MI : MBB) {
         //MI.print(errs());
         SmallVector<std::pair<MCPhysReg, const MachineOperand *>, 8> Clobbers;
         LiveRegs.stepForward(MI,Clobbers);
 
         //These instruction will not be complied anyways
-        if (MI.isDebugInstr() || MI.isCFIInstruction()|| MI.isKill()||MI.isInlineAsm() || MI.isBarrier() )
+        if (MI.isDebugInstr() || MI.isCFIInstruction()|| MI.isKill()||MI.isInlineAsm() || MI.isBarrier())
           continue;        
         
         const DebugLoc DL = MI.getDebugLoc();
@@ -173,24 +173,29 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
              
         //enforce RSP before push/pop
         if(isPopPush(MI)){
-          
-          //for now we don't take care of the stack   
-          //continue;
-          
-          BuildMI(MBB, MI, DL, TII->get(X86::MOV64rr)) 
-		      .addReg(X86::RSP, RegState::Define)
-          .addReg(X86::RSP, RegState::Kill)
-          .addImm(0x0)
-          .setMIFlags(MachineInstr::NaclStartBundle);
+          #ifndef NaCl_LDST_CHECK  
+          continue;
+          #endif
+          // count the number of push and pop in a row
+          // we can put at least 8 push and pop in the same bundle safely. 
+          if(Emitting_Rewrite_PushPop == false){
+            BuildMI(MBB, MI, DL, TII->get(X86::MOV64rr)) 
+            .addReg(X86::RSP, RegState::Define)
+            .addReg(X86::RSP, RegState::Kill)
+            .addImm(0x0);
 
-          BuildMI(MBB, MI, DL, TII->get(X86::AND64rr))
-          .addReg(X86::RSP, RegState::Define)
-          .addReg(X86::RSP, RegState::Kill)
-          .addReg(X86::RSP, RegState::Kill);
-
-          MI.setFlags(MachineInstr::NaclEndBundle);
+            BuildMI(MBB, MI, DL, TII->get(X86::AND64rr))
+            .addReg(X86::RSP, RegState::Define)
+            .addReg(X86::RSP, RegState::Kill)
+            .addReg(X86::RSP, RegState::Kill);
+            Emitting_Rewrite_PushPop = true;
+          }
         }
         else if(MI.mayLoad() || MI.mayStore() || skip(MI)){
+          Emitting_Rewrite_PushPop = false;
+          #ifndef NaCl_LDST_CHECK  
+          continue;
+          #endif
           //some weird instructions will load and branch at the same time, skip them
           if(MI.isCall() || MI.isBranch())
             continue;
@@ -275,7 +280,7 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
 
           //     Index.setReg(X86::R15);
           //     Scale.setImm(1);
-          //     MI.setFlags(MachineInstr::NaclEndBundle);
+          //     MI.setFlag(MachineInstr::NaclEndBundle);
           //     continue;
           //   }
             // if(!base_reg && index_reg){
@@ -288,7 +293,7 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
             //   // Base.setReg(Index.getReg());
             //   // Index.setReg(X86::R15);
             //   // Scale.setImm(1);
-            //   MI.setFlags(MachineInstr::NaclEndBundle);
+            //   MI.setFlag(MachineInstr::NaclEndBundle);
             //   continue;
             // }
 
@@ -337,10 +342,14 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
             // Index.setReg(X86::R15);
             // Offset.setImm(0);
             // Segment.setReg(0);
-            MI.setFlags(MachineInstr::NaclEndBundle);
+            MI.setFlag(MachineInstr::NaclEndBundle);
             //errs()<<"after :"<<MI;
         }
         else if(MI.getOpcode()==X86::RET64){
+          Emitting_Rewrite_PushPop = false;
+          #ifndef NaCl_RETCALL_CHECK  
+          continue;
+          #endif
 	        const DebugLoc DL = MI.getDebugLoc();
           const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
 	        BuildMI(MBB, MI, DL, TII->get(X86::POP64r)) 
@@ -358,6 +367,10 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
             .addReg(X86::R8, RegState::Kill)
             .setMIFlags(MachineInstr::NaclEndBundle);
         }else if(MI.getOpcode() == X86::CALL64r || MI.getOpcode() == X86::JMP64r){
+          Emitting_Rewrite_PushPop = false;
+          #ifndef NaCl_RETCALL_CHECK  
+          continue;
+          #endif
           const DebugLoc DL = MI.getDebugLoc();
           const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
           
@@ -370,8 +383,9 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
             .addReg(MI.getOperand(0).getReg(), RegState::Define)
             .addReg(MI.getOperand(0).getReg(), RegState::Kill)
             .addReg(MI.getOperand(0).getReg(), RegState::Kill);
-        MI.setFlags(MachineInstr::NaclEndBundle);
+        MI.setFlag(MachineInstr::NaclEndBundle);
         }else{
+          Emitting_Rewrite_PushPop = false;
           const DebugLoc DL = MI.getDebugLoc();
           const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
           int n = MI.getNumOperands();

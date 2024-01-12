@@ -2414,18 +2414,18 @@ static void addConstantComments(const MachineInstr *MI,
 
 void X86AsmPrinter::CheckBundle(const MachineInstr *MI){
   
+  if(MI->getFlag(MachineInstr::NaclStartPush)){
+    OutStreamer->emitCodeAlignment(32, &getSubtargetInfo());
+    OutStreamer->reset_counter();
+  }
   if(MI->getFlag(MachineInstr::NaclStartBundle)){
     X86MCInstLower MCInstLowering(*MF, *this);
     int bundle_size = 0;
     const MachineInstr* next = MI;
-    //errs()<<"\n\nOutStreamer->NaClCounter :"<<OutStreamer->NaClCounter<<"\n";
     MCInst TmpInst;
     MCInstLowering.Lower(next, TmpInst);
     bundle_size += OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo());
     
-    // errs()<<"Instruction: ";
-    // MI->print(errs());
-    // errs()<<"size: "<<OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<<"\n";
     
     while (next->getNextNode()){
       next = next->getNextNode();
@@ -2435,10 +2435,6 @@ void X86AsmPrinter::CheckBundle(const MachineInstr *MI){
       MCInst TmpInst;
       MCInstLowering.Lower(next, TmpInst);
       bundle_size += OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo());
-      
-      // errs()<<"Instruction: ";
-      // next->print(errs());
-      // errs()<<"size: "<< OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<<"\n";
 
       if(next->getFlag(MachineInstr::NaclEndBundle)){
         if(OutStreamer->NaClCounter + bundle_size > 32){
@@ -2449,23 +2445,17 @@ void X86AsmPrinter::CheckBundle(const MachineInstr *MI){
         }
         return;
       }
-
-      //next->print(errs());
     }
     
   }
   
 }
-bool bundle = true;
+
 void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
   // FIXME: Enable feature predicate checks once all the test pass.
   // X86_MC::verifyInstructionPredicates(MI->getOpcode(),
   //                                     Subtarget->getFeatureBits());
-  // if(OutStreamer->Bundle_Started){
-  //   CheckBundleInlineAsm(MI);
-  // }
 
-  //MI->print(errs());
 
   X86MCInstLower MCInstLowering(*MF, *this);
   const X86RegisterInfo *RI =
@@ -2723,8 +2713,10 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
 
   MCInst TmpInst;
   MCInstLowering.Lower(MI, TmpInst);
-  if(bundle)
+
+#ifdef NaCl_BUNDLE
     CheckBundle(MI);
+#endif
 
   // Stackmap shadows cannot include branch targets, so we can count the bytes
   // in a call towards the shadow, but must ensure that the no thread returns
@@ -2745,20 +2737,20 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
     // Then emit the call
     // MI->print(errs());
     // errs()<<"\n";
-    if(bundle){
-      if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<32){
-        emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
-      }else if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())>32){
-        OutStreamer->emitCodeAlignment(32,&getSubtargetInfo());
-        OutStreamer->NaClCounter = 0;
-        emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
-      }
-    }
-    OutStreamer->emitInstruction(TmpInst, getSubtargetInfo());
-    if(bundle){
+#ifdef NaCl_BUNDLE
+    if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())<32){
+      emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
+    }else if(OutStreamer->NaClCounter + OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo())>32){
       OutStreamer->emitCodeAlignment(32,&getSubtargetInfo());
       OutStreamer->NaClCounter = 0;
+      emitX86Nops(*OutStreamer, 32 - OutStreamer->NaClCounter - OutStreamer->GetInstEncodingLen(TmpInst,getSubtargetInfo()),Subtarget);
     }
+#endif
+    OutStreamer->emitInstruction(TmpInst, getSubtargetInfo());
+#ifdef NaCl_BUNDLE
+    OutStreamer->emitCodeAlignment(32,&getSubtargetInfo());
+    OutStreamer->NaClCounter = 0;
+#endif
     return;
   }
 
