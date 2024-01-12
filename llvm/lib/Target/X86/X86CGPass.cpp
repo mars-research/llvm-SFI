@@ -162,13 +162,15 @@ bool X86CGPass::runOnMachineFunction(MachineFunction &MF) {
     LivePhysRegs LiveRegs(*RegInfo);
     LiveRegs.addLiveOuts(MBB);
 
+    bool Emitting_Rewrite_PushPop = false;
+
     for (MachineInstr &MI : MBB) {
       // MI.print(errs());
       SmallVector<std::pair<MCPhysReg, const MachineOperand *>, 8> Clobbers;
       LiveRegs.stepForward(MI,Clobbers);
 
       //These instruction will not be complied anyways
-      if (MI.isDebugInstr() || MI.isCFIInstruction()|| MI.isKill()||MI.isInlineAsm() || MI.isBarrier() || MI.getFlag(MachineInstr::Skip) )
+      if (MI.isDebugInstr() || MI.isCFIInstruction()|| MI.isKill()||MI.isInlineAsm() || MI.isBarrier() )
         continue;        
       
       const DebugLoc DL = MI.getDebugLoc();
@@ -180,58 +182,24 @@ bool X86CGPass::runOnMachineFunction(MachineFunction &MF) {
         #ifndef ColorGuard_LDST_CHECK  
         continue;
         #endif
-        // count the number of push and pop in a row
-        // we can put at least 8 push and pop in the same bundle safely. 
-        int count = 0;
-        // MI.print(errs());
-        auto MI_ptr = MI.getNextNode();
-        MachineInstr* Last_MI;
-        while(MI_ptr){
-          if(count >= 7)
-            continue;
-          // MI_ptr->print(errs());
-          if(isPopPush(*MI_ptr)){
-            Last_MI = MI_ptr;
-            count++;
-            MI_ptr->setFlag(MachineInstr::Skip);
-            if(MI_ptr->getNextNode()){
-              MI_ptr = MI_ptr->getNextNode();
-            }else{
-              break;
-            }
-          }
-          else if (MI_ptr->isDebugInstr() || MI_ptr->isCFIInstruction()|| MI_ptr->isKill()||MI_ptr->isInlineAsm() || MI_ptr->isBarrier() ){
-            if(MI_ptr->getNextNode()){
-              MI_ptr = MI_ptr->getNextNode();
-            }else{
-              break;
-            }
-          }else{
-            break;
-          }
-        }
-        errs() << count << " of push/pops in a row \n";
-        BuildMI(MBB, MI, DL, TII->get(X86::MOV64rr)) 
-        .addReg(X86::RSP, RegState::Define)
-        .addReg(X86::RSP, RegState::Kill)
-        .addImm(0x0)
-        .setMIFlag(MachineInstr::CGStartBundle)
-        .setMIFlag(MachineInstr::Align);
+        if(Emitting_Rewrite_PushPop == false){
+          BuildMI(MBB, MI, DL, TII->get(X86::MOV64rr)) 
+          .addReg(X86::RSP, RegState::Define)
+          .addReg(X86::RSP, RegState::Kill)
+          .addImm(0x0)
+          .setMIFlag(MachineInstr::CGStartPush);
 
-        BuildMI(MBB, MI, DL, TII->get(X86::AND64rr))
-        .addReg(X86::RSP, RegState::Define)
-        .addReg(X86::RSP, RegState::Kill)
-        .addReg(X86::RSP, RegState::Kill);
-
-        if (Last_MI){
-          Last_MI->setFlag(MachineInstr::CGEndBundle);
-        }else{
-          MI.setFlag(MachineInstr::CGEndBundle);
+          BuildMI(MBB, MI, DL, TII->get(X86::AND64rr))
+          .addReg(X86::RSP, RegState::Define)
+          .addReg(X86::RSP, RegState::Kill)
+          .addReg(X86::RSP, RegState::Kill);
+          Emitting_Rewrite_PushPop = true;
         }
 
       }
         // else if(MI.mayLoad() || MI.mayStore() || skip(MI)){
       else if(MI.mayLoad() || MI.mayStore()){
+        Emitting_Rewrite_PushPop = false;
         #ifndef ColorGuard_LDST_CHECK  
         continue;
         #endif
@@ -285,7 +253,7 @@ bool X86CGPass::runOnMachineFunction(MachineFunction &MF) {
           }
         }
         else if(MI.getOpcode()==X86::RET64){
-
+          Emitting_Rewrite_PushPop = false;
           #ifndef ColorGuard_RETCALL_CHECK
           continue;
           #endif
@@ -307,7 +275,7 @@ bool X86CGPass::runOnMachineFunction(MachineFunction &MF) {
             .addReg(X86::R8, RegState::Kill)
             .setMIFlags(MachineInstr::CGEndBundle);
         }else if(MI.getOpcode() == X86::CALL64r || MI.getOpcode() == X86::JMP64r){
-
+          Emitting_Rewrite_PushPop = false;
           #ifndef ColorGuard_RETCALL_CHECK
           continue;
           #endif
