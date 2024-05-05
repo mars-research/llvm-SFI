@@ -10,25 +10,25 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef NaCl_RESERVE_R15
-#define NaCl_RESERVE_R15
-#endif
+// #ifndef NaCl_RESERVE_R15
+// #define NaCl_RESERVE_R15
+// #endif
 
 // #ifndef NaCl_RESERVE_R10
 // #define NaCl_RESERVE_R10
 // #endif
 
-#ifndef NaCl_RETCALL_CHECK
-#define NaCl_RETCALL_CHECK
-#endif
+// #ifndef NaCl_RETCALL_CHECK
+// #define NaCl_RETCALL_CHECK
+// #endif
 
-#ifndef NaCl_LDST_CHECK
-#define NaCl_LDST_CHECK
-#endif
+// #ifndef NaCl_LDST_CHECK
+// #define NaCl_LDST_CHECK
+// #endif
 
-#ifndef NaCl_BUNDLE
-#define NaCl_BUNDLE
-#endif
+// #ifndef NaCl_BUNDLE
+// #define NaCl_BUNDLE
+// #endif
 
 #ifndef LLVM_LIB_TARGET_X86_X86SUBTARGET_H
 #define LLVM_LIB_TARGET_X86_X86SUBTARGET_H
