@@ -105,6 +105,7 @@ bool AArch64NaClMFPass::runOnMachineFunction(MachineFunction &MF) {
           }
         } //we don't do anything for the tail return, but the call checks will check tail returns
         else if (MI.isReturn() && (MI.getOpcode()!=AArch64::TCRETURNdi) && (MI.getOpcode()!=AArch64::TCRETURNri) && (MI.getOpcode()!=AArch64::TCRETURNriALL) && (MI.getOpcode()!=AArch64::TCRETURNriBTI)){
+          continue;
           if (bundle_counter==12){
             BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
             bundle_counter = 0;
