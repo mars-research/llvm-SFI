@@ -147,7 +147,6 @@ static bool skip(MachineInstr &MI){
 
 char X86CGPass::ID = 0;
 bool X86CGPass::runOnMachineFunction(MachineFunction &MF) {
-    return true;
   #ifdef ColorGuard_BUNDLE
   MF.setAlignment(Align(32));
   #endif 
