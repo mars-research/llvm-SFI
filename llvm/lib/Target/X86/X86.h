@@ -152,7 +152,7 @@ FunctionPass *createX86InsertX87waitPass();
 FunctionPass *createX86PartialReductionPass();
 
 ///NaCl
-FunctionPass *createX86CGPass();
+FunctionPass *createX86MPKPass();
 FunctionPass *createX86CGDebugPrePass();
 FunctionPass *createX86CGDebugPostPass();
 

@@ -11,25 +11,25 @@
 //===----------------------------------------------------------------------===//
 
 //Start of ColorGuard options
-#ifndef ColorGuard_RESERVE_R15
-#define ColorGuard_RESERVE_R15
-#endif
+// #ifndef ColorGuard_RESERVE_R15
+// #define ColorGuard_RESERVE_R15
+// #endif
 
 // #ifndef ColorGuard_RESERVE_R10
 // #define ColorGuard_RESERVE_R10
 // #endif
 
-#ifndef ColorGuard_RETCALL_CHECK
-#define ColorGuard_RETCALL_CHECK
-#endif
+// #ifndef ColorGuard_RETCALL_CHECK
+// #define ColorGuard_RETCALL_CHECK
+// #endif
 
-#ifndef ColorGuard_LDST_CHECK
-#define ColorGuard_LDST_CHECK
-#endif
+// #ifndef ColorGuard_LDST_CHECK
+// #define ColorGuard_LDST_CHECK
+// #endif
 
-#ifndef ColorGuard_BUNDLE
-#define ColorGuard_BUNDLE
-#endif
+// #ifndef ColorGuard_BUNDLE
+// #define ColorGuard_BUNDLE
+// #endif
 
 //End of ColorGuard options
 

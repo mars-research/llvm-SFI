@@ -88,7 +88,7 @@ set(sources
   X86WinEHState.cpp
   X86InsertWait.cpp
 
-  X86CGPass.cpp
+  X86MPKPass.cpp
   X86CGDebugPrePass.cpp
   X86CGDebugPostPass.cpp
   )

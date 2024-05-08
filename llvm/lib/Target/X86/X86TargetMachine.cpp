@@ -565,7 +565,7 @@ void X86PassConfig::addPreEmitPass() {
   addPass(createX86InsertX87waitPass());
 
   addPass(createX86CGDebugPrePass());
-  addPass(createX86CGPass());
+  addPass(createX86MPKPass());
 }
 
 void X86PassConfig::addPreEmitPass2() {
