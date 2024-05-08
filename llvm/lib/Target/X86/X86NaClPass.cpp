@@ -327,9 +327,9 @@ bool X86NaClPass::runOnMachineFunction(MachineFunction &MF) {
               .setMIFlags(MachineInstr::NaclStartBundle);
               }else{
               BuildMI(MBB, MI, DL, TII->get(X86::LEA64r), X86::R10)
-              .addReg(X86::R15) //base
+              .addReg(X86::R10) //base
               .addImm(1)
-              .addReg(X86::R10)
+              .addReg(X86::NoRegister)
               .addImm(0)
               .addReg(X86::NoRegister)
               .setMIFlags(MachineInstr::NaclStartBundle);
