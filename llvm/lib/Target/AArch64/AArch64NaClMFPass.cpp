@@ -42,7 +42,7 @@ using namespace llvm;
 namespace{
     class AArch64NaClMFPass : public MachineFunctionPass{
     public:
-        bool fake_checks = true;
+        bool testing = true;
         bool ignore_rrldst = true;
         static char ID;
         AArch64NaClMFPass() : MachineFunctionPass(ID){}
@@ -54,14 +54,53 @@ char AArch64NaClMFPass::ID = 0;
 bool AArch64NaClMFPass::runOnMachineFunction(MachineFunction &MF) {
     //errs()<<"NaClMFPass invoked!\n";
     MF.setAlignment(Align(16));
+    int bundle_counter = 0;
+    bool emit_update_x28 = true;
+    bool emit_update_sp = false;
     for (MachineBasicBlock &MBB : MF) {
       MBB.setAlignment(Align(16));
-      int bundle_counter = 0;
+      bundle_counter = 0;
       for (MachineInstr &MI : MBB) {
         if (MI.isDebugInstr() || MI.isCFIInstruction()|| MI.isKill())
-          continue;          
-        
+          continue;         
+
         const TargetInstrInfo *TII = MBB.getParent()->getSubtarget().getInstrInfo();
+        
+        if(emit_update_x28){
+          BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::ADDXri)).addReg(
+           AArch64::X15).addReg(
+            AArch64::SP).addImm(
+            0).addImm(
+            0);
+          bundle_counter += 4;
+          bundle_counter = bundle_counter%16;
+          emit_update_x28 = false;
+        }
+
+        if(emit_update_sp){
+          BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::ADDXri)).addReg(
+           AArch64::X15).addReg(
+            AArch64::SP).addImm(
+            0).addImm(
+            0);
+          bundle_counter += 4;
+          bundle_counter = bundle_counter%16;
+          emit_update_sp = false;
+        }
+
+
+        for(auto op = MI.operands_begin(); op != MI.operands_end(); op++){
+          if(op->isReg()){
+            if(op->getReg() == AArch64::SP){
+              //op->setReg(AArch64::X28);
+          }
+        }
+        }
+        if(MI.getOperand(0).isReg()){
+          if(MI.getOperand(0).getReg() == AArch64::SP){
+            emit_update_sp = true;
+          }
+        }
         if (AArch64InstrInfo::isLdSt(MI)){
           int op_idx; 
           if (AArch64InstrInfo::isUpdateLdSt(MI)){
@@ -77,29 +116,66 @@ bool AArch64NaClMFPass::runOnMachineFunction(MachineFunction &MF) {
             abort();
           }
           if (MI.getOperand(op_idx+1).isReg() && !ignore_rrldst){
-            errs()<<"two indexing reg ld/st is not supported yet\n;";
-            abort();
+            if (bundle_counter==12){
+            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
+            bundle_counter = 0;
+            }
+            if (bundle_counter==8){
+            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
+            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
+            bundle_counter = 0;
+            }
+            if(testing){
+              BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
+                MI.getOperand(op_idx).getReg()).addReg(
+                MI.getOperand(op_idx).getReg()).addReg(
+                MI.getOperand(op_idx).getReg()).addImm(
+                0).addImm(
+                63);//inject tag
+              
+              BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
+                MI.getOperand(op_idx+1).getReg()).addReg(
+                MI.getOperand(op_idx+1).getReg()).addReg(
+                AArch64::WZR).addImm(
+                56).addImm(
+                4);//clear tag
+            }
+            else{
+              BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
+                MI.getOperand(op_idx).getReg()).addReg(
+                MI.getOperand(op_idx).getReg()).addReg(
+                AArch64::X27).addImm(
+                56).addImm(
+                4);//inject tag
+                BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
+                MI.getOperand(op_idx+1).getReg()).addReg(
+                MI.getOperand(op_idx+1).getReg()).addReg(
+                AArch64::WZR).addImm(
+                56).addImm(
+                4);//clear tag
+            }
+              bundle_counter += 8;
           }
           else{
             if (bundle_counter==12){
               BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
               bundle_counter = 0;
             }
-            if(fake_checks){
+            if(testing){
               BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
                 MI.getOperand(op_idx).getReg()).addReg(
                 MI.getOperand(op_idx).getReg()).addReg(
                 MI.getOperand(op_idx).getReg()).addImm(
                 0).addImm(
-                63);
+                63);//inject tag
             }
             else{
               BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
                 MI.getOperand(op_idx).getReg()).addReg(
                 MI.getOperand(op_idx).getReg()).addReg(
-                AArch64::X28).addImm(
-                32).addImm(
-                31);
+                AArch64::X27).addImm(
+                56).addImm(
+                4);//inject tag
             }
               bundle_counter += 4;
           }
@@ -116,7 +192,7 @@ bool AArch64NaClMFPass::runOnMachineFunction(MachineFunction &MF) {
           }
 
           //emitting return edge checks
-          if(fake_checks){
+          if(testing){
             BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
               MI.getOperand(0).getReg()).addReg(
               MI.getOperand(0).getReg()).addReg(
@@ -133,7 +209,7 @@ bool AArch64NaClMFPass::runOnMachineFunction(MachineFunction &MF) {
             BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
               MI.getOperand(0).getReg()).addReg(
               MI.getOperand(0).getReg()).addReg(
-              AArch64::X28).addImm(32).addImm(31);//inject 
+              AArch64::X26).addImm(32).addImm(31);//inject 
           }
           bundle_counter += 8;
       }
@@ -156,7 +232,7 @@ bool AArch64NaClMFPass::runOnMachineFunction(MachineFunction &MF) {
           }
 
           //emitting indirect branch checks
-          if(fake_checks){
+          if(testing){
             BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
               MI.getOperand(0).getReg()).addReg(
               MI.getOperand(0).getReg()).addReg(
@@ -173,7 +249,7 @@ bool AArch64NaClMFPass::runOnMachineFunction(MachineFunction &MF) {
             BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
               MI.getOperand(0).getReg()).addReg(
               MI.getOperand(0).getReg()).addReg(
-              AArch64::X28).addImm(32).addImm(31);//inject 
+              AArch64::X26).addImm(32).addImm(31);//inject 
           }
           bundle_counter += 8;
         }else{

@@ -338,9 +338,22 @@ AArch64RegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   }
 
   //arm nacl
-  markSuperRegs(Reserved, AArch64::X28);
-  //markSuperRegs(Reserved, AArch64::X28);
-  //markSuperRegs(Reserved, AArch64::X28);
+  markSuperRegs(Reserved, AArch64::X26);//seg
+  markSuperRegs(Reserved, AArch64::W26);
+  markSuperRegs(Reserved, AArch64::H26);
+  markSuperRegs(Reserved, AArch64::D26);
+  markSuperRegs(Reserved, AArch64::B26);
+  markSuperRegs(Reserved, AArch64::X15);//for fake sp
+  markSuperRegs(Reserved, AArch64::W15);
+  markSuperRegs(Reserved, AArch64::H15);
+  markSuperRegs(Reserved, AArch64::D15);
+  markSuperRegs(Reserved, AArch64::B15);
+  markSuperRegs(Reserved, AArch64::X27);//teg
+  markSuperRegs(Reserved, AArch64::W27);
+  markSuperRegs(Reserved, AArch64::H27);
+  markSuperRegs(Reserved, AArch64::D27);
+  markSuperRegs(Reserved, AArch64::B27);
+  
 
   assert(checkAllSuperRegsMarked(Reserved));
   return Reserved;
