@@ -40,6 +40,8 @@
 
 using namespace llvm;
 
+static bool Debug = false;
+
 namespace{
     class AArch64NaClMFPassDebugPre : public MachineFunctionPass{
     public:
@@ -51,15 +53,17 @@ namespace{
 }
 char AArch64NaClMFPassDebugPre::ID = 0;
 bool AArch64NaClMFPassDebugPre::runOnMachineFunction(MachineFunction &MF) {
-  errs()<<"AArch64NaClMFPassDebugPre invoked!\n";
-  std::error_code EC;
-  llvm::raw_fd_ostream OS("MI.nosfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
-  MF.print(OS);
-  OS.close();
+  //errs()<<"AArch64NaClMFPassDebugPre invoked!\n";
+  if(Debug){
+    std::error_code EC;
+    llvm::raw_fd_ostream OS("/home/xiangd/ffmpeg-arm-nacl/MI.nosfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
+    MF.print(OS);
+    OS.close();
+  }
   return true;
 }
 FunctionPass *llvm::createAArch64NaClMFPassDebugPre() { 
-  std::error_code EC;
-  llvm::raw_fd_ostream OS("MI.nosfi", EC);
-  OS.close();
+  //  std::error_code EC;
+  // //  llvm::raw_fd_ostream OS("/home/xiangd/ffmpeg-arm-nacl/MI.nosfi", EC);
+  //  OS.close();
   return new AArch64NaClMFPassDebugPre(); }

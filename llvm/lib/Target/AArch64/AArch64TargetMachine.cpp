@@ -799,6 +799,9 @@ void AArch64PassConfig::addPreEmitPass() {
     addPass(createEHContGuardCatchretPass());
   }
 
+  addPass(createAArch64NaClMFPassDebugPre());//arm nacl
+  addPass(createAArch64NaClMFPass());//arm nacl
+
   if (TM->getOptLevel() != CodeGenOpt::None && EnableCompressJumpTables)
     addPass(createAArch64CompressJumpTablesPass());
 
@@ -806,8 +809,6 @@ void AArch64PassConfig::addPreEmitPass() {
       TM->getTargetTriple().isOSBinFormatMachO())
     addPass(createAArch64CollectLOHPass());
 
-  addPass(createAArch64NaClMFPassDebugPre());//arm nacl
-  addPass(createAArch64NaClMFPass());//arm nacl
   addPass(createAArch64NaClMFPassDebugPost());//arm nacl
 }
 

@@ -8159,6 +8159,72 @@ bool AArch64InstrInfo::isLdSt(const MachineInstr &MI){
   if(isPairableLdStInst(MI)){
     return true;
   }
+  
+  switch (MI.getOpcode()) {
+    default:
+      break; 
+    case AArch64::LDRBBui:
+    case AArch64::LDURBBi:
+    case AArch64::LDRSBWui:
+    case AArch64::LDURSBWi:
+    case AArch64::STRBBui:
+    case AArch64::STURBBi:
+    case AArch64::LDRHHui:
+    case AArch64::LDURHHi:
+    case AArch64::LDRSHWui:
+    case AArch64::LDURSHWi:
+    case AArch64::STRHHui:
+    case AArch64::STURHHi:
+    case AArch64::LDRSui:
+    case AArch64::LDURSi:
+    case AArch64::LDRSpre:
+    case AArch64::LDRSWui:
+    case AArch64::LDURSWi:
+    case AArch64::LDRWpre:
+    case AArch64::LDRWui:
+    case AArch64::LDURWi:
+    case AArch64::STRSui:
+    case AArch64::STURSi:
+    case AArch64::STRSpre:
+    case AArch64::STRWui:
+    case AArch64::STURWi:
+    case AArch64::STRWpre:
+    case AArch64::LDPSi:
+    case AArch64::LDPSWi:
+    case AArch64::LDPWi:
+    case AArch64::STPSi:
+    case AArch64::STPWi:
+    case AArch64::LDRDui:
+    case AArch64::LDURDi:
+    case AArch64::LDRDpre:
+    case AArch64::LDRXui:
+    case AArch64::LDURXi:
+    case AArch64::LDRXpre:
+    case AArch64::STRDui:
+    case AArch64::STURDi:
+    case AArch64::STRDpre:
+    case AArch64::STRXui:
+    case AArch64::STURXi:
+    case AArch64::STRXpre:
+    case AArch64::LDPDi:
+    case AArch64::LDPXi:
+    case AArch64::STPDi:
+    case AArch64::STPXi:
+    case AArch64::LDRQui:
+    case AArch64::LDURQi:
+    case AArch64::STRQui:
+    case AArch64::STURQi:
+    case AArch64::STRQpre:
+    case AArch64::LDPQi:
+    case AArch64::LDRQpre:
+    case AArch64::STPQi:
+    case AArch64::STGOffset:
+    case AArch64::STZGOffset:
+    case AArch64::ST2GOffset:
+    case AArch64::STZ2GOffset:
+    case AArch64::STGPi:
+      return true;
+  }
 
   return false;
 }
