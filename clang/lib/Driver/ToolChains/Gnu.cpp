@@ -477,12 +477,12 @@ void tools::gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     if (Args.hasArg(options::OPT_rdynamic))
       CmdArgs.push_back("-export-dynamic");
 
-    if (!Args.hasArg(options::OPT_shared) && !IsStaticPIE &&
-        !Args.hasArg(options::OPT_r)) {
-      CmdArgs.push_back("-dynamic-linker");
-      CmdArgs.push_back(Args.MakeArgString(Twine(D.DyldPrefix) +
-                                           ToolChain.getDynamicLinker(Args)));
-    }
+    // if (!Args.hasArg(options::OPT_shared) && !IsStaticPIE &&
+    //     !Args.hasArg(options::OPT_r)) {
+    //   CmdArgs.push_back("-dynamic-linker");
+    //   CmdArgs.push_back(Args.MakeArgString(Twine(D.DyldPrefix) +
+    //                                        ToolChain.getDynamicLinker(Args)));
+    // }
   }
 
   CmdArgs.push_back("-o");
@@ -695,6 +695,16 @@ void tools::gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   }
 
   Args.AddAllArgs(CmdArgs, options::OPT_T);
+
+  StringRef DefaultPrefixDirs(PREFIX_DIRS);
+  if (DefaultPrefixDirs != "") {
+    SmallVector<StringRef, 5> dirs;
+    DefaultPrefixDirs.split(dirs, ":");
+    for (StringRef dir : dirs) {
+      CmdArgs.push_back("-L");
+      CmdArgs.push_back(Args.MakeArgString(dir));
+    }
+  }
 
   const char *Exec = Args.MakeArgString(ToolChain.GetLinkerPath());
   C.addCommand(std::make_unique<Command>(JA, *this,

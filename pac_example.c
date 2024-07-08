@@ -1,11 +1,11 @@
 #include <stdio.h>
-
+#include <stdint.h>
 // this is a 256 byte buffer and it's 256 bytes aligned
 // we allocate doubled of it so we can store a metadata before it;
 char buff[1<<10]__attribute__ ((aligned (1<<9))); 
 char *buff_ptr = buff+(1<<9);
+extern uint64_t metadata_table[256];
 
-#include <stdint.h>
 void * pac(void * ptr, uint64_t size){
         uint64_t context = 0x233;
 
@@ -25,14 +25,12 @@ void * pac(void * ptr, uint64_t size){
 
 void * auth(void * ptr){
         uint64_t * actual_ptr =  (uint64_t *) ((uint64_t) ptr & 0xFFFFFFFFFFFF);
-        uint64_t sz = ((uint64_t)ptr>>56);
-        uint64_t * orginal_ptr = (uint64_t *)((uint64_t)ptr >>sz<<sz);
-        uint64_t * orginal_ptr_wotag = (uint64_t *) ((uint64_t)orginal_ptr & 0xFFFFFFFFFFFF);
-        //printf("sz %lx orginal_ptr %p\n",sz, orginal_ptr);
-        uint64_t metadata = *(uint64_t *)(orginal_ptr_wotag - 1);
-        //printf("authing ptr %p with %lx\n",orginal_ptr,metadata);
+        uint64_t upper_context = ((uint64_t)ptr>>48);
+        uint64_t index = upper_context & 0xFF;
+        uint64_t sz = ((uint64_t)upper_context>>8);
+        uint64_t * orginal_ptr = (uint64_t *)((uint64_t)ptr>>sz);
+        uint64_t metadata = metadata_table[index];
         asm("autda %0, %2" : "=r"(orginal_ptr) : "0"(orginal_ptr), "r"(metadata));
-        //printf("authed ptr %p\n",orginal_ptr);
         return actual_ptr;
 }
 
