@@ -1260,6 +1260,15 @@ Compilation *Driver::BuildCompilation(ArrayRef<const char *> ArgList) {
     A->claim();
     PrefixDirs.push_back(A->getValue(0));
   }
+
+  StringRef DefaultPrefixDirs(PREFIX_DIRS);
+  if (DefaultPrefixDirs != "") {
+    SmallVector<StringRef, 5> dirs;
+    DefaultPrefixDirs.split(dirs, ":");
+    for (StringRef dir : dirs)
+      PrefixDirs.push_back(std::string(dir));
+  }
+
   if (Optional<std::string> CompilerPathValue =
           llvm::sys::Process::GetEnv("COMPILER_PATH")) {
     StringRef CompilerPath = *CompilerPathValue;

@@ -406,8 +406,24 @@ bool MCObjectStreamer::mayHaveInstructions(MCSection &Sec) const {
   return Sec.hasInstructions();
 }
 
+int64_t MCObjectStreamer::GetInstEncodingLen(const MCInst &Inst, const MCSubtargetInfo &STI){
+
+    SmallString<256> Code;
+    SmallVector<MCFixup, 4> Fixups;
+    raw_svector_ostream VecOS(Code);
+    getAssembler().getEmitter().encodeInstruction(Inst, VecOS, Fixups, STI);
+    return Code.size();
+  }
+
 void MCObjectStreamer::emitInstruction(const MCInst &Inst,
                                        const MCSubtargetInfo &STI) {
+#ifdef NaCl_BUNDLE
+  if(NaClCounter + GetInstEncodingLen(Inst, STI) > 32){
+    emitCodeAlignment(32, &STI);
+    NaClCounter = 0;
+  }
+  NaClCounter = (NaClCounter + GetInstEncodingLen(Inst, STI)) % 32;
+#endif
   const MCSection &Sec = *getCurrentSectionOnly();
   if (Sec.isVirtualSection()) {
     getContext().reportError(Inst.getLoc(), Twine(Sec.getVirtualSectionKind()) +

@@ -1467,6 +1467,7 @@ void AsmPrinter::emitFunctionBody() {
   bool CanDoExtraAnalysis = ORE->allowExtraAnalysis(DEBUG_TYPE);
   for (auto &MBB : *MF) {
     // Print a label for the basic block.
+    OutStreamer->reset_counter();
     emitBasicBlockStart(MBB);
     DenseMap<StringRef, unsigned> MnemonicCounts;
     for (auto &MI : MBB) {
