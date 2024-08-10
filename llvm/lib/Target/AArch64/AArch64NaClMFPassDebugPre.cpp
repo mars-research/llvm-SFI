@@ -40,7 +40,7 @@
 
 using namespace llvm;
 
-static bool debug = false;
+static bool debug = true;
 
 namespace{
     class AArch64NaClMFPassDebugPre : public MachineFunctionPass{
@@ -56,7 +56,7 @@ bool AArch64NaClMFPassDebugPre::runOnMachineFunction(MachineFunction &MF) {
   //errs()<<"AArch64NaClMFPassDebugPre invoked!\n";
   if(debug){
   std::error_code EC;
-  llvm::raw_fd_ostream OS("/home/xiangd/ffmpeg-arm-nacl/MI.nosfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
+  llvm::raw_fd_ostream OS("/users/BUXD/llvm-SFI/MI.nosfi", EC,llvm::sys::fs::OF_Append| llvm::sys::fs::OF_TextWithCRLF); 
   MF.print(OS);
   OS.close();
   }

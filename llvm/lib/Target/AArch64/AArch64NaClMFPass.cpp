@@ -43,7 +43,6 @@ namespace{
     class AArch64NaClMFPass : public MachineFunctionPass{
     public:
         bool testing = true;
-        bool ignore_rrldst = true;
         static char ID;
         AArch64NaClMFPass() : MachineFunctionPass(ID){}
         StringRef getPassName() const override { return "AArch64NaClMFPass"; }
@@ -52,226 +51,125 @@ namespace{
 }
 char AArch64NaClMFPass::ID = 0;
 bool AArch64NaClMFPass::runOnMachineFunction(MachineFunction &MF) {
-    //errs()<<"NaClMFPass invoked!\n";
-    MF.setAlignment(Align(16));
-    int bundle_counter = 0;
-    bool emit_update_x28 = true;
-    bool emit_update_sp = false;
+    errs()<<"NaClMFPass invoked!\n";
+
     for (MachineBasicBlock &MBB : MF) {
-      MBB.setAlignment(Align(16));
-      bundle_counter = 0;
+
+      bool sp_used = false;
+
+      const TargetInstrInfo *TII = MBB.getParent()->getSubtarget().getInstrInfo();
+
       for (MachineInstr &MI : MBB) {
         if (MI.isDebugInstr() || MI.isCFIInstruction()|| MI.isKill())
           continue;         
 
-        const TargetInstrInfo *TII = MBB.getParent()->getSubtarget().getInstrInfo();
-        
-        if(emit_update_x28){
-          BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::ADDXri)).addReg(
-           AArch64::X15).addReg(
-            AArch64::SP).addImm(
-            0).addImm(
-            0);
-          bundle_counter += 4;
-          bundle_counter = bundle_counter%16;
-          emit_update_x28 = false;
-        }
-
-        if(emit_update_sp){
-          BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::ADDXri)).addReg(
-           AArch64::X15).addReg(
-            AArch64::SP).addImm(
-            0).addImm(
-            0);
-          bundle_counter += 4;
-          bundle_counter = bundle_counter%16;
-          emit_update_sp = false;
-        }
-
-
         for(auto op = MI.operands_begin(); op != MI.operands_end(); op++){
           if(op->isReg()){
             if(op->getReg() == AArch64::SP){
-              //op->setReg(AArch64::X28);
+              op->setReg(AArch64::X15);
+              sp_used = true;
+            }
           }
         }
-        }
-        if(MI.getOperand(0).isReg()){
-          if(MI.getOperand(0).getReg() == AArch64::SP){
-            emit_update_sp = true;
-          }
-        }
-        if (AArch64InstrInfo::isLdSt(MI)){
-          int op_idx; 
-          if (AArch64InstrInfo::isUpdateLdSt(MI)){
+
+        if (!AArch64InstrInfo::isLdSt(MI))
+          continue;
+
+        int op_idx; 
+        bool is_pairldst = false;
+        bool sp_involved = false;
+        if (AArch64InstrInfo::isUpdateLdSt(MI)){
             op_idx = 2;
-          }else{
+        }else{
             op_idx = 1;
-          }
-          if(AArch64InstrInfo::isPairLdSt(MI)){
-            op_idx += 1;
-          }
-          if (!MI.getOperand(op_idx).isReg()){
+        }
+        if (AArch64InstrInfo::isPairLdSt(MI)){
+          op_idx += 1;
+          is_pairldst = true;
+        }else{
+          is_pairldst = false;
+        }
+        if (!MI.getOperand(op_idx).isReg()){
             errs()<<"fatal LDP/STP with no register operand!\n;";
             abort();
-          }
-          if (MI.getOperand(op_idx+1).isReg() && !ignore_rrldst){
-            if (bundle_counter==12){
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            bundle_counter = 0;
-            }
-            if (bundle_counter==8){
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            bundle_counter = 0;
-            }
-            if(testing){
-              BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-                MI.getOperand(op_idx).getReg()).addReg(
-                MI.getOperand(op_idx).getReg()).addReg(
-                MI.getOperand(op_idx).getReg()).addImm(
-                0).addImm(
-                63);//inject tag
-              
-              BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-                MI.getOperand(op_idx+1).getReg()).addReg(
-                MI.getOperand(op_idx+1).getReg()).addReg(
-                AArch64::WZR).addImm(
-                56).addImm(
-                4);//clear tag
-            }
-            else{
-              BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-                MI.getOperand(op_idx).getReg()).addReg(
-                MI.getOperand(op_idx).getReg()).addReg(
-                AArch64::X27).addImm(
-                56).addImm(
-                4);//inject tag
-                BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-                MI.getOperand(op_idx+1).getReg()).addReg(
-                MI.getOperand(op_idx+1).getReg()).addReg(
-                AArch64::WZR).addImm(
-                56).addImm(
-                4);//clear tag
-            }
-              bundle_counter += 8;
-          }
-          else{
-            if (bundle_counter==12){
-              BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-              bundle_counter = 0;
-            }
-            if(testing){
-              BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-                MI.getOperand(op_idx).getReg()).addReg(
-                MI.getOperand(op_idx).getReg()).addReg(
-                MI.getOperand(op_idx).getReg()).addImm(
-                0).addImm(
-                63);//inject tag
-            }
-            else{
-              BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-                MI.getOperand(op_idx).getReg()).addReg(
-                MI.getOperand(op_idx).getReg()).addReg(
-                AArch64::X27).addImm(
-                56).addImm(
-                4);//inject tag
-            }
-              bundle_counter += 4;
-          }
-        } //we don't do anything for the tail return, but the call checks will check tail returns
-        else if (MI.isReturn() && (MI.getOpcode()!=AArch64::TCRETURNdi) && (MI.getOpcode()!=AArch64::TCRETURNri) && (MI.getOpcode()!=AArch64::TCRETURNriALL) && (MI.getOpcode()!=AArch64::TCRETURNriBTI)){
-          if (bundle_counter==12){
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            bundle_counter = 0;
-          }
-          if (bundle_counter==8){
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            bundle_counter = 0;
-          }
-
-          //emitting return edge checks
-          if(testing){
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              AArch64::WZR).addImm(0).addImm(0);//clear
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              MI.getOperand(0).getReg()).addImm(0).addImm(63);//inject
-          }else{
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              AArch64::WZR).addImm(0).addImm(3);//clear
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              AArch64::X26).addImm(32).addImm(31);//inject 
-          }
-          bundle_counter += 8;
-      }
-       else if (MI.isCall()){
-        if (MI.getOpcode() == AArch64::BR || MI.getOpcode() == AArch64::BLR){
-          if (bundle_counter==12){
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            bundle_counter = 4;
-          }
-          else if (bundle_counter==8){
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            bundle_counter = 4;
-          }
-          else if (bundle_counter==0){
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            bundle_counter = 4;
-          }
-
-          //emitting indirect branch checks
-          if(testing){
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              MI.getOperand(0).getReg()).addReg(
-             AArch64::WZR).addImm(0).addImm(0);//clear
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              MI.getOperand(0).getReg()).addImm(0).addImm(63);//inject
-          }else{
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              AArch64::WZR).addImm(0).addImm(3);//clear
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              MI.getOperand(0).getReg()).addReg(
-              AArch64::X26).addImm(32).addImm(31);//inject 
-          }
-          bundle_counter += 8;
-        }else{
-          if (bundle_counter==8){
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            bundle_counter = 12;
-          }
-          else if (bundle_counter==4){
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            bundle_counter = 12;
-          }
-          else if (bundle_counter==0){
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::HINT)).addImm(0);
-            bundle_counter = 12;
-          }
         }
-       }
-      bundle_counter += 4;
-      bundle_counter = bundle_counter%16;
+
+          if (MI.getOperand(op_idx).isReg()){
+            if (MI.getOperand(op_idx+1).isReg()){
+              if(testing){
+                BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
+                  MI.getOperand(op_idx).getReg()).addReg(
+                  MI.getOperand(op_idx).getReg()).addReg(
+                  MI.getOperand(op_idx).getReg()).addImm(
+                  0).addImm(
+                  63);//inject tag
+                
+                BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
+                  MI.getOperand(op_idx+1).getReg()).addReg(
+                  MI.getOperand(op_idx+1).getReg()).addReg(
+                  AArch64::WZR).addImm(
+                  56).addImm(
+                  4);//clear tag
+              }
+              else{
+                BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
+                  MI.getOperand(op_idx).getReg()).addReg(
+                  MI.getOperand(op_idx).getReg()).addReg(
+                  AArch64::X27).addImm(
+                  56).addImm(
+                  4);//inject tag
+                  BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
+                  MI.getOperand(op_idx+1).getReg()).addReg(
+                  MI.getOperand(op_idx+1).getReg()).addReg(
+                  AArch64::WZR).addImm(
+                  56).addImm(
+                  4);//clear tag
+              }
+            }
+            else{
+              if(testing){
+                BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
+                  MI.getOperand(op_idx).getReg()).addReg(
+                  MI.getOperand(op_idx).getReg()).addReg(
+                  MI.getOperand(op_idx).getReg()).addImm(
+                  0).addImm(
+                  63);//inject tag
+              }
+              else{
+                BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::BFMXri)).addReg(
+                  MI.getOperand(op_idx).getReg()).addReg(
+                  MI.getOperand(op_idx).getReg()).addReg(
+                  AArch64::X27).addImm(
+                  56).addImm(
+                  4);//inject tag
+              }
+            }
+          }
+        
+    }
+
+    if (sp_used){
+      for (MachineInstr &MI : MBB) {
+        if (MI.isReturn() || MI.isTerminator() || MI.isCall() || MI.isBranch() || MI.isBarrier()){
+          BuildMI(MBB, MI, MI.getDebugLoc(), TII->get(AArch64::ADDXri)).addReg(
+            AArch64::SP).addReg(
+            AArch64::X15).addImm(
+            0).addImm(
+            0);
+        }
+      }
+      
+      BuildMI(MBB, MBB.begin(), NULL, TII->get(AArch64::ADDXri)).addReg(
+        AArch64::X15).addReg(
+        AArch64::SP).addImm(
+        0).addImm(
+        0);
+
+      BuildMI(MBB, MBB.end(), NULL, TII->get(AArch64::ADDXri)).addReg(
+        AArch64::SP).addReg(
+        AArch64::X15).addImm(
+        0).addImm(
+        0);
     }
   }
       return true;
